@@ -35,7 +35,7 @@ public final class Constants {
      */
     public static final class Drivetrain {
         public static final int FRONT_LEFT_TURN_ID = 9;
-        public static final int FRONT_LEFT_DRIVE_ID = 10;
+        public static final int FRONT_LEFT_DRIVE_ID = 8;
         public static final int FRONT_LEFT_QUAD_A_DIO_CHANNEL = 7;
         public static final int FRONT_LEFT_QUAD_B_DIO_CHANNEL = 8;
         public static final int FRONT_LEFT_PWM_DIO_CHANNEL = 6;

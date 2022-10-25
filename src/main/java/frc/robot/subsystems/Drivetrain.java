@@ -6,6 +6,7 @@ import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.wpilibj.ADIS16470_IMU;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Calibrations;
 import frc.robot.Constants;
@@ -41,9 +42,9 @@ public class Drivetrain extends SubsystemBase {
     private final SwerveDriveKinematics m_kinematics;
     private final ADIS16470_IMU m_imu;
     private final SwerveDriveOdometry m_odometry;
-    private StateType m_currentState;
     private SwerveModuleState[] m_swerveModuleStates;
     private ChassisSpeeds m_chassisSpeeds;
+    private StateType m_currentState;
 
 
     //-------------------------------------------------------------------------------------------//
@@ -70,13 +71,33 @@ public class Drivetrain extends SubsystemBase {
         setModuleStates(m_swerveModuleStates);
     }
 
+    /**
+     * Method to output calibration telemetry to the smart dashboard.
+     */
+    public void outputCalibrationTelemetry() {
+        //new SwerveModule[]{frontLeft, frontRight, rearLeft, rearRight};
+        String[] modules = {"FL", "FR", "RL", "RR"}; 
+        for (int i = 0; i < m_modules.length; i++) {
+            SmartDashboard.putNumber(modules[i] + " Absolute Encoder (rad)", 
+                m_modules[i].getTurnAbsEncAngleRad());
+            SmartDashboard.putNumber(modules[i] + " Position Setpoint (rad)", 
+                m_modules[i].getPosSetpointRad());
+            SmartDashboard.putNumber(modules[i] + " Velocity Setpoint (rad/s)", 
+                m_modules[i].getVelSetpointRps());
+            SmartDashboard.putNumber(modules[i] + " Position Error (rad)", 
+                m_modules[i].getPosErrorRad());
+            SmartDashboard.putNumber(modules[i] + " Velocity Error (rad/s)", 
+                m_modules[i].getVelErrorRps());
+        }
+    }
+
 
     //-------------------------------------------------------------------------------------------//
     /*                                     PRIVATE METHODS                                       */
     //-------------------------------------------------------------------------------------------//
 
 
-    /** Returns the IMU yaw angle as a Rotations2d object. */
+    /** Returns the IMU yaw angle as a Rotation2d object. */
     private Rotation2d getImuRotation() {
         return Rotation2d.fromDegrees(m_imu.getAngle());
     }
@@ -109,8 +130,7 @@ public class Drivetrain extends SubsystemBase {
     /** Constructor for the drivetrain. */
     public Drivetrain() {
         SwerveModule frontLeft =
-            new SwerveModule("FrontLeft",
-                             Calibrations.FRONT_LEFT_ZERO_RAD,
+            new SwerveModule(Calibrations.FRONT_LEFT_ZERO_RAD,
                              Constants.Drivetrain.FRONT_LEFT_TURN_ID,
                              Constants.Drivetrain.FRONT_LEFT_DRIVE_ID,
                              Constants.Drivetrain.FRONT_LEFT_PWM_DIO_CHANNEL,
@@ -120,8 +140,7 @@ public class Drivetrain extends SubsystemBase {
                              0.02);
 
         SwerveModule frontRight =
-            new SwerveModule("FrontRight",
-                             Calibrations.FRONT_RIGHT_ZERO_RAD,
+            new SwerveModule(Calibrations.FRONT_RIGHT_ZERO_RAD,
                              Constants.Drivetrain.FRONT_RIGHT_TURN_ID,
                              Constants.Drivetrain.FRONT_RIGHT_DRIVE_ID,
                              Constants.Drivetrain.FRONT_RIGHT_PWM_DIO_CHANNEL,
@@ -131,8 +150,7 @@ public class Drivetrain extends SubsystemBase {
                              0.02);
 
         SwerveModule rearLeft =
-            new SwerveModule("RearLeft",
-                             Calibrations.REAR_LEFT_ZERO_RAD,
+            new SwerveModule(Calibrations.REAR_LEFT_ZERO_RAD,
                              Constants.Drivetrain.REAR_LEFT_TURN_ID,
                              Constants.Drivetrain.REAR_LEFT_DRIVE_ID,
                              Constants.Drivetrain.REAR_LEFT_PWM_DIO_CHANNEL,
@@ -142,8 +160,7 @@ public class Drivetrain extends SubsystemBase {
                              0.02);
 
         SwerveModule rearRight =
-            new SwerveModule("RearRight",
-                             Calibrations.REAR_RIGHT_ZERO_RAD,
+            new SwerveModule(Calibrations.REAR_RIGHT_ZERO_RAD,
                              Constants.Drivetrain.REAR_RIGHT_TURN_ID,
                              Constants.Drivetrain.REAR_RIGHT_DRIVE_ID,
                              Constants.Drivetrain.REAR_RIGHT_PWM_DIO_CHANNEL,
@@ -163,23 +180,23 @@ public class Drivetrain extends SubsystemBase {
         m_currentState = StateType.Homing;
     }
 
-    /** This method is called periodically by the main program thread. */
+    /** This method is called periodically. */
     @Override 
     public void periodic() {
         updateOdometry();
-        // switch (m_currentState) {
-        //     case Homing:
-        //         for (int i = 0; i < m_modules.length; i++) {
-        //             m_modules[i].setHomingState();
-        //         }
-        //         break;
+        switch (m_currentState) {
+            case Homing:
+                for (int i = 0; i < m_modules.length; i++) {
+                    m_modules[i].setHomingState();
+                }
+                break;
 
-        //     default:
-        //         for (int i = 0; i < m_modules.length; i++) {
-        //             m_modules[i].setState(new SwerveModuleState(0.0, 
-        //                 new Rotation2d(m_modules[i].getTurnRelativeEncoderAngle())));
-        //         }
-        // }
+            default:
+                for (int i = 0; i < m_modules.length; i++) {
+                    m_modules[i].setState(new SwerveModuleState(0.0, 
+                        new Rotation2d(m_modules[i].getTurnRelEncAngleRad())));
+                }
+        }
     }
 
 
