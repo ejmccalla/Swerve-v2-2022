@@ -17,14 +17,14 @@ public final class Calibrations {
      *
      * @implNote This should be done before each event minimum.
      */
-    public static final double TRACK_WIDTH_INCH = 0.0;
+    public static final double TRACK_WIDTH_INCH = 19.5;
 
     /**
      * Distance between front and back wheels (best: calibrate with encoders, ok: use tape measure).
      *
      * @implNote This should be done before each event minimum.
      */
-    public static final double WHEEL_BASE_INCH = 0.0;
+    public static final double WHEEL_BASE_INCH = 19.5;
 
 
     /**
@@ -34,7 +34,7 @@ public final class Calibrations {
      *
      * @implNote The "ok" method should be done before each match minimum.
      */
-    public static final double FRONT_LEFT_ZERO_RAD = 0.0;
+    public static final double FRONT_LEFT_ZERO_RAD = 1.27;
 
     /**
      * The PWM encoder angle for zero'ing the wheel (best: place the robot against a wall, push the
@@ -43,7 +43,7 @@ public final class Calibrations {
      *
      * @implNote The "ok" method should be done before each match minimum.
      */
-    public static final double FRONT_RIGHT_ZERO_RAD = 0.0;
+    public static final double FRONT_RIGHT_ZERO_RAD = 0.91;
 
     /**
      * The PWM encoder angle for zero'ing the wheel (best: place the robot against a wall, push the
@@ -52,7 +52,7 @@ public final class Calibrations {
      *
      * @implNote The "ok" method should be done before each match minimum.
      */
-    public static final double REAR_LEFT_ZERO_RAD = 0.0;
+    public static final double REAR_LEFT_ZERO_RAD = 0.27;
 
     /**
      * The PWM encoder angle for zero'ing the wheel (best: place the robot against a wall, push the
@@ -61,14 +61,14 @@ public final class Calibrations {
      *
      * @implNote The "ok" method should be done before each match minimum.
      */
-    public static final double REAR_RIGHT_ZERO_RAD = 0.0;
+    public static final double REAR_RIGHT_ZERO_RAD = 5.82;
 
     /**
      * The P-gain of the PID turning controller.
      *
      * @implNote This should be tuned before each event minimum.
      */
-    public static final double TURN_P_GAIN = 0.0;
+    public static final double TURN_P_GAIN = 2.5;
 
     /**
      * The D-gain of the PID turning controller.

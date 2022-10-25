@@ -28,7 +28,7 @@ import edu.wpi.first.wpilibj2.command.CommandScheduler;
 public class Robot extends TimedRobot {
 
     /** This has the effect of a C/C++ precompile directive to enable/disable logging. */
-    private static final boolean m_enableLogger = true;
+    private static final boolean m_enableLogger = false;
 
     private RobotContainer m_robotContainer;
     private Compressor m_compressor;
@@ -56,11 +56,12 @@ public class Robot extends TimedRobot {
     @Override
     public void robotPeriodic() {
         m_compressorCurrent = m_compressor.getCurrent();
-        m_pressure = 250.0 * (m_compressor.getPressure() / m_compressor.getAnalogVoltage()) - 25.0;
+        m_pressure = m_compressor.getPressure();
         if (m_enableLogger) {
             m_compressorCurrentLogEntry.append(m_compressorCurrent);
             m_pressureLogEntry.append(m_pressure);
         }
+        m_robotContainer.m_drivetrain.outputCalibrationTelemetry();
         SmartDashboard.putNumber("Pressure (PSI)", m_pressure);
         SmartDashboard.putNumber("Compressor (Amps)", m_compressorCurrent);
         CommandScheduler.getInstance().run();
@@ -80,7 +81,7 @@ public class Robot extends TimedRobot {
 
     @Override
     public void teleopInit() {
-        // m_compressor.enableDigital();
+        m_compressor.enableDigital();
     }
 
     @Override
