@@ -39,7 +39,6 @@ public class Robot extends TimedRobot {
 
     @Override
     public void robotInit() {
-        m_robotContainer = new RobotContainer();
         if (m_enableLogger) {
             DataLogManager.start();
             DataLogManager.logNetworkTables(false);
@@ -48,23 +47,23 @@ public class Robot extends TimedRobot {
             m_compressorCurrentLogEntry = 
                 new DoubleLogEntry(log, "/pneumatics/compressor_current_A");
         }
+        LiveWindow.disableAllTelemetry();
+        m_robotContainer = new RobotContainer();
         m_compressor = new Compressor(Constants.Hardware.PCM_ID, PneumaticsModuleType.REVPH);
         m_compressor.disable();
-        LiveWindow.disableAllTelemetry();
     }
 
     @Override
     public void robotPeriodic() {
+        CommandScheduler.getInstance().run();
         m_compressorCurrent = m_compressor.getCurrent();
         m_pressure = m_compressor.getPressure();
         if (m_enableLogger) {
             m_compressorCurrentLogEntry.append(m_compressorCurrent);
             m_pressureLogEntry.append(m_pressure);
         }
-        m_robotContainer.m_drivetrain.outputCalibrationTelemetry();
         SmartDashboard.putNumber("Pressure (PSI)", m_pressure);
         SmartDashboard.putNumber("Compressor (Amps)", m_compressorCurrent);
-        CommandScheduler.getInstance().run();
     }
 
     @Override

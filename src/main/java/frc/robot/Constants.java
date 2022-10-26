@@ -34,45 +34,39 @@ public final class Constants {
      * <p>The positions of the modules are relative to the robot center.
      */
     public static final class Drivetrain {
-        public static final int FRONT_LEFT_TURN_ID = 9;
-        public static final int FRONT_LEFT_DRIVE_ID = 8;
-        public static final int FRONT_LEFT_QUAD_A_DIO_CHANNEL = 7;
-        public static final int FRONT_LEFT_QUAD_B_DIO_CHANNEL = 8;
-        public static final int FRONT_LEFT_PWM_DIO_CHANNEL = 6;
-        public static final int FRONT_RIGHT_TURN_ID = 30;
-        public static final int FRONT_RIGHT_DRIVE_ID = 1;
-        public static final int FRONT_RIGHT_QUAD_A_DIO_CHANNEL = 10;
-        public static final int FRONT_RIGHT_QUAD_B_DIO_CHANNEL = 11;
-        public static final int FRONT_RIGHT_PWM_DIO_CHANNEL = 9;
-        public static final int REAR_LEFT_TURN_ID = 11;
-        public static final int REAR_LEFT_DRIVE_ID = 10;
-        public static final int REAR_LEFT_QUAD_A_DIO_CHANNEL = 4;
-        public static final int REAR_LEFT_QUAD_B_DIO_CHANNEL = 5;
-        public static final int REAR_LEFT_PWM_DIO_CHANNEL = 3;
-        public static final int REAR_RIGHT_TURN_ID = 18;
-        public static final int REAR_RIGHT_DRIVE_ID = 19;
-        public static final int REAR_RIGHT_QUAD_A_DIO_CHANNEL = 1;
-        public static final int REAR_RIGHT_QUAD_B_DIO_CHANNEL = 2;
-        public static final int REAR_RIGHT_PWM_DIO_CHANNEL = 0;
+        /** Switch to enable logging telemetry to disk. */
+        public static final boolean ENABLE_LOGGING = false;
+        /** Module order: front left, front right, rear left, rear right. */
+        public static final String[] MODULE_LABELS = {"FL", "FR", "RL", "RR"};
+        /** Module order: front left, front right, rear left, rear right. */
+        public static final int[] TURN_IDS = {9, 30, 11, 18};
+        /** Module order: front left, front right, rear left, rear right. */
+        public static final int[] DRIVE_IDS = {8, 1, 10, 19};
+        /** Module order: front left, front right, rear left, rear right. */
+        public static final int[] QUAD_A_DIO_CHANNELS = {7, 10, 4, 1};
+        /** Module order: front left, front right, rear left, rear right. */
+        public static final int[] QUAD_B_DIO_CHANNELS = {8, 11, 5, 2};
+        /** Module order: front left, front right, rear left, rear right. */
+        public static final int[] PWM_DIO_CHANNELS = {6, 9, 3, 0};
 
         /** https://www.swervedrivespecialties.com/products/mk4-swerve-module#:~:text=The%20steering%20gear%20ratio%20of,4%20different%20drive%20gear%20ratios */
         public static final double TURN_GEAR_RATIO = 12.8;
         public static final double DRIVE_GEAR_RATIO = 6.75;
 
-        public static final Translation2d FRONT_LEFT_LOCATION =
+        /** Module order: front left, front right, rear left, rear right. */
+        public static final Translation2d[] MODULE_LOCATIONS = {
             new Translation2d(Units.inchesToMeters(Calibrations.WHEEL_BASE_INCH) / 2,
-                              Units.inchesToMeters(Calibrations.TRACK_WIDTH_INCH) / 2);
-        public static final Translation2d FRONT_RIGHT_LOCATION =
+                              Units.inchesToMeters(Calibrations.TRACK_WIDTH_INCH) / 2),
             new Translation2d(Units.inchesToMeters(Calibrations.WHEEL_BASE_INCH) / 2,
-                              Units.inchesToMeters(Calibrations.TRACK_WIDTH_INCH) / 2);
-        public static final Translation2d REAR_LEFT_LOCATION =
+                              Units.inchesToMeters(Calibrations.TRACK_WIDTH_INCH) / 2),
             new Translation2d(-Units.inchesToMeters(Calibrations.WHEEL_BASE_INCH) / 2,
-                              Units.inchesToMeters(Calibrations.TRACK_WIDTH_INCH) / 2);
-        public static final Translation2d REAR_RIGHT_LOCATION =
+                              Units.inchesToMeters(Calibrations.TRACK_WIDTH_INCH) / 2),
             new Translation2d(-Units.inchesToMeters(Calibrations.WHEEL_BASE_INCH) / 2,
-                              -Units.inchesToMeters(Calibrations.TRACK_WIDTH_INCH) / 2);
+                              -Units.inchesToMeters(Calibrations.TRACK_WIDTH_INCH) / 2)
+        };
 
-
+        public static final double turnEncPpr = 4096.0;
+        public static final int numModules = 4;
 
     }
 

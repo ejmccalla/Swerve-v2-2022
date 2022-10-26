@@ -32,36 +32,11 @@ public final class Calibrations {
      * robot along the wall for 10 feet, and take the average measured angle, ok: manually align
      * the wheels and take a single reading).
      *
-     * @implNote The "ok" method should be done before each match minimum.
-     */
-    public static final double FRONT_LEFT_ZERO_RAD = 1.27;
-
-    /**
-     * The PWM encoder angle for zero'ing the wheel (best: place the robot against a wall, push the
-     * robot along the wall for 10 feet, and take the average measured angle, ok: manually align
-     * the wheels and take a single reading).
+     * <p>The ordering is: front left, front right, rear left, rear right
      *
      * @implNote The "ok" method should be done before each match minimum.
      */
-    public static final double FRONT_RIGHT_ZERO_RAD = 0.91;
-
-    /**
-     * The PWM encoder angle for zero'ing the wheel (best: place the robot against a wall, push the
-     * robot along the wall for 10 feet, and take the average measured angle, ok: manually align
-     * the wheels and take a single reading).
-     *
-     * @implNote The "ok" method should be done before each match minimum.
-     */
-    public static final double REAR_LEFT_ZERO_RAD = 0.27;
-
-    /**
-     * The PWM encoder angle for zero'ing the wheel (best: place the robot against a wall, push the
-     * robot along the wall for 10 feet, and take the average measured angle, ok: manually align
-     * the wheels and take a single reading).
-     *
-     * @implNote The "ok" method should be done before each match minimum.
-     */
-    public static final double REAR_RIGHT_ZERO_RAD = 5.82;
+    public static final double[] ZEROS_RAD = {1.27, 0.91, 0.27, 5.82};
 
     /**
      * The P-gain of the PID turning controller.
@@ -96,7 +71,7 @@ public final class Calibrations {
      *
      * @implNote This should be tuned before each event minimum.
      */
-    public static final double MAX_TURN_ERROR_DEG = 0.0;
+    public static final double MAX_TURN_ERROR_DEG = 1.0;
 
     /**
      * The P-gain of the PID driving controller.

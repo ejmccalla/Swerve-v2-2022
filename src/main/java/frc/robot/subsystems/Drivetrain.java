@@ -6,7 +6,6 @@ import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.wpilibj.ADIS16470_IMU;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Calibrations;
 import frc.robot.Constants;
@@ -27,13 +26,13 @@ public class Drivetrain extends SubsystemBase {
         Teleop {
             @Override
             public String toString() {
-                return "Teleop";
+                return "Drive";
             }
         },
-        Following {
+        PathFollowing {
             @Override
             public String toString() {
-                return "Following";
+                return "Path Following";
             }
         },
     }
@@ -42,7 +41,8 @@ public class Drivetrain extends SubsystemBase {
     private final SwerveDriveKinematics m_kinematics;
     private final ADIS16470_IMU m_imu;
     private final SwerveDriveOdometry m_odometry;
-    private SwerveModuleState[] m_swerveModuleStates;
+    private SwerveModuleState[] m_currentStates;
+    private SwerveModuleState[] m_desiredStates;
     private ChassisSpeeds m_chassisSpeeds;
     private StateType m_currentState;
 
@@ -67,28 +67,7 @@ public class Drivetrain extends SubsystemBase {
         } else {
             m_chassisSpeeds = new ChassisSpeeds(speedX, speedY, rot);
         }
-        m_swerveModuleStates = m_kinematics.toSwerveModuleStates(m_chassisSpeeds);
-        setModuleStates(m_swerveModuleStates);
-    }
-
-    /**
-     * Method to output calibration telemetry to the smart dashboard.
-     */
-    public void outputCalibrationTelemetry() {
-        //new SwerveModule[]{frontLeft, frontRight, rearLeft, rearRight};
-        String[] modules = {"FL", "FR", "RL", "RR"}; 
-        for (int i = 0; i < m_modules.length; i++) {
-            SmartDashboard.putNumber(modules[i] + " Absolute Encoder (rad)", 
-                m_modules[i].getTurnAbsEncAngleRad());
-            SmartDashboard.putNumber(modules[i] + " Position Setpoint (rad)", 
-                m_modules[i].getPosSetpointRad());
-            SmartDashboard.putNumber(modules[i] + " Velocity Setpoint (rad/s)", 
-                m_modules[i].getVelSetpointRps());
-            SmartDashboard.putNumber(modules[i] + " Position Error (rad)", 
-                m_modules[i].getPosErrorRad());
-            SmartDashboard.putNumber(modules[i] + " Velocity Error (rad/s)", 
-                m_modules[i].getVelErrorRps());
-        }
+        m_desiredStates = m_kinematics.toSwerveModuleStates(m_chassisSpeeds);
     }
 
 
@@ -102,22 +81,12 @@ public class Drivetrain extends SubsystemBase {
         return Rotation2d.fromDegrees(m_imu.getAngle());
     }
 
-    /** Updates the field relative position of the robot. */
-    private void updateOdometry() {
-        m_odometry.update(
-            getImuRotation(),
-            m_modules[0].getState(),
-            m_modules[1].getState(),
-            m_modules[2].getState(),
-            m_modules[3].getState());
-    }
-
     /** Set the swerve module states. */
-    private void setModuleStates(SwerveModuleState[] swerveModuleStates) {
-        SwerveDriveKinematics.desaturateWheelSpeeds(m_swerveModuleStates, 
+    private void setModulesDesiredState() {
+        SwerveDriveKinematics.desaturateWheelSpeeds(m_desiredStates, 
                                                     Calibrations.MAX_DRIVE_VELOCITY_MPS);
-        for (int i = 0; i < m_modules.length; i++) {
-            m_modules[i].setState(swerveModuleStates[i]);
+        for (int i = 0; i < Constants.Drivetrain.numModules; i++) {
+            m_modules[i].setState(m_desiredStates[i]);
         }
     }
 
@@ -129,75 +98,53 @@ public class Drivetrain extends SubsystemBase {
 
     /** Constructor for the drivetrain. */
     public Drivetrain() {
-        SwerveModule frontLeft =
-            new SwerveModule(Calibrations.FRONT_LEFT_ZERO_RAD,
-                             Constants.Drivetrain.FRONT_LEFT_TURN_ID,
-                             Constants.Drivetrain.FRONT_LEFT_DRIVE_ID,
-                             Constants.Drivetrain.FRONT_LEFT_PWM_DIO_CHANNEL,
-                             Constants.Drivetrain.FRONT_LEFT_QUAD_A_DIO_CHANNEL,
-                             Constants.Drivetrain.FRONT_LEFT_QUAD_B_DIO_CHANNEL,
-                             false,
-                             0.02);
-
-        SwerveModule frontRight =
-            new SwerveModule(Calibrations.FRONT_RIGHT_ZERO_RAD,
-                             Constants.Drivetrain.FRONT_RIGHT_TURN_ID,
-                             Constants.Drivetrain.FRONT_RIGHT_DRIVE_ID,
-                             Constants.Drivetrain.FRONT_RIGHT_PWM_DIO_CHANNEL,
-                             Constants.Drivetrain.FRONT_RIGHT_QUAD_A_DIO_CHANNEL,
-                             Constants.Drivetrain.FRONT_RIGHT_QUAD_B_DIO_CHANNEL,
-                             false,
-                             0.02);
-
-        SwerveModule rearLeft =
-            new SwerveModule(Calibrations.REAR_LEFT_ZERO_RAD,
-                             Constants.Drivetrain.REAR_LEFT_TURN_ID,
-                             Constants.Drivetrain.REAR_LEFT_DRIVE_ID,
-                             Constants.Drivetrain.REAR_LEFT_PWM_DIO_CHANNEL,
-                             Constants.Drivetrain.REAR_LEFT_QUAD_A_DIO_CHANNEL,
-                             Constants.Drivetrain.REAR_LEFT_QUAD_B_DIO_CHANNEL,
-                             false,
-                             0.02);
-
-        SwerveModule rearRight =
-            new SwerveModule(Calibrations.REAR_RIGHT_ZERO_RAD,
-                             Constants.Drivetrain.REAR_RIGHT_TURN_ID,
-                             Constants.Drivetrain.REAR_RIGHT_DRIVE_ID,
-                             Constants.Drivetrain.REAR_RIGHT_PWM_DIO_CHANNEL,
-                             Constants.Drivetrain.REAR_RIGHT_QUAD_A_DIO_CHANNEL,
-                             Constants.Drivetrain.REAR_RIGHT_QUAD_B_DIO_CHANNEL,
-                             false,
-                             0.02);
-        m_modules = new SwerveModule[]{frontLeft, frontRight, rearLeft, rearRight};
-        
-        m_kinematics = new SwerveDriveKinematics(Constants.Drivetrain.FRONT_LEFT_LOCATION,
-                                                 Constants.Drivetrain.FRONT_RIGHT_LOCATION, 
-                                                 Constants.Drivetrain.REAR_LEFT_LOCATION,
-                                                 Constants.Drivetrain.REAR_RIGHT_LOCATION);
-
+        m_modules = new SwerveModule[Constants.Drivetrain.numModules];
+        m_desiredStates = new SwerveModuleState[Constants.Drivetrain.numModules];
+        m_currentStates = new SwerveModuleState[Constants.Drivetrain.numModules];
+        for (int i = 0; i < Constants.Drivetrain.numModules; i++) {
+            m_modules[i] = new SwerveModule(Constants.Drivetrain.MODULE_LABELS[i],
+                                            Calibrations.ZEROS_RAD[i],
+                                            Constants.Drivetrain.TURN_IDS[i],
+                                            Constants.Drivetrain.DRIVE_IDS[i],
+                                            Constants.Drivetrain.PWM_DIO_CHANNELS[i],
+                                            Constants.Drivetrain.QUAD_A_DIO_CHANNELS[i],
+                                            Constants.Drivetrain.QUAD_B_DIO_CHANNELS[i],
+                                            0.02);
+            m_desiredStates[i] = new SwerveModuleState(0.0, new Rotation2d());
+            m_currentStates[i] = m_modules[i].getState();
+        }
+        m_kinematics = new SwerveDriveKinematics(Constants.Drivetrain.MODULE_LOCATIONS);
         m_imu = new ADIS16470_IMU();
         m_odometry = new SwerveDriveOdometry(m_kinematics, Rotation2d.fromDegrees(0.0));
+        m_chassisSpeeds = new ChassisSpeeds(0.0, 0.0, 0.0);
         m_currentState = StateType.Homing;
+
     }
 
     /** This method is called periodically. */
     @Override 
     public void periodic() {
-        updateOdometry();
+
+        for (int i = 0; i < Constants.Drivetrain.numModules; i++) {
+            m_modules[i].logTelemetry();
+            m_currentStates[i] = m_modules[i].getState();
+        }
+        m_odometry.update(getImuRotation(), m_currentStates);
+
         switch (m_currentState) {
             case Homing:
-                for (int i = 0; i < m_modules.length; i++) {
-                    m_modules[i].setHomingState();
+                for (int i = 0; i < Constants.Drivetrain.numModules; i++) {
+                    m_modules[i].homeModule();
                 }
                 break;
 
             default:
-                for (int i = 0; i < m_modules.length; i++) {
-                    m_modules[i].setState(new SwerveModuleState(0.0, 
-                        new Rotation2d(m_modules[i].getTurnRelEncAngleRad())));
+                for (int i = 0; i < Constants.Drivetrain.numModules; i++) {
+                    m_desiredStates[i] = m_modules[i].getState();
+                    m_desiredStates[i].speedMetersPerSecond = 0.0;
                 }
+                setModulesDesiredState();
         }
     }
-
 
 }
