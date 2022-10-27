@@ -35,7 +35,7 @@ public final class Constants {
      */
     public static final class Drivetrain {
         /** Switch to enable logging telemetry to disk. */
-        public static final boolean ENABLE_LOGGING = false;
+        public static final boolean ENABLE_LOGGING = true;
         /** Module order: front left, front right, rear left, rear right. */
         public static final String[] MODULE_LABELS = {"FL", "FR", "RL", "RR"};
         /** Module order: front left, front right, rear left, rear right. */

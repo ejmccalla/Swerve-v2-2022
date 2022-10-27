@@ -12,6 +12,7 @@ import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.math.trajectory.TrapezoidProfile.Constraints;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.util.datalog.BooleanLogEntry;
 import edu.wpi.first.util.datalog.DataLog;
 import edu.wpi.first.util.datalog.DoubleLogEntry;
 import edu.wpi.first.wpilibj.DataLogManager;
@@ -69,6 +70,7 @@ public class SwerveModule {
     private DoubleLogEntry m_turnVelErrorLogEntry;
     private DoubleLogEntry m_turnFeedforwardOutLogEntry;
     private DoubleLogEntry m_turnPidOutLogEntry;
+    private BooleanLogEntry m_isHomedLogEntry;
 
 
     //-------------------------------------------------------------------------------------------//
@@ -90,6 +92,7 @@ public class SwerveModule {
             m_turnVelErrorLogEntry.append(getTurnVelErrorRps());
             m_turnFeedforwardOutLogEntry.append(getTurnFeedforwardOutputV());
             m_turnPidOutLogEntry.append(getTurnPidOutputV());
+            m_isHomedLogEntry.append(getIsHomed());
         }
     }
 
@@ -129,13 +132,28 @@ public class SwerveModule {
      * feedforward controllers. The absolute encoder is used for feedback.
     */
     public void homeModule() {
-        m_turnPidOutput = 
-            m_turnController.calculate(getTurnAbsEncAngleRad(), m_homeRad);
-        m_turnFeedForwardOutput = 
-            m_turnFeedForward.calculate(m_turnController.getSetpoint().velocity);
-
+        if (m_turnController.atGoal()) {
+            m_isHomed = true;
+            m_turnPidOutput = 0.0;
+            m_turnFeedForwardOutput = 0.0;
+        } else {
+            m_isHomed = false;
+            m_turnPidOutput = 
+                m_turnController.calculate(getTurnAbsEncAngleRad(), m_homeRad);
+            m_turnFeedForwardOutput = 
+                m_turnFeedForward.calculate(m_turnController.getSetpoint().velocity);
+        }
         m_turnMotor.setVoltage(m_turnPidOutput + m_turnFeedForwardOutput);
         m_driveMotor.setVoltage(0.0);
+    }
+
+    /**
+     * Return the homing state of the module.
+     *
+     * @return true if the module is homes, otherwise false
+     */
+    public boolean getIsHomed() {
+        return m_isHomed;
     }
 
     /**
@@ -256,27 +274,6 @@ public class SwerveModule {
         return m_turnPidOutput;
     }
     
-    // /**
-    //  * Method to output the telemetry to the smart dashboard.
-    //  */
-    // public void outputTelemetry() {
-    //     SmartDashboard.putNumber(m_label + " Absolute Encoder (rad)", 
-    //         getTurnAbsEncAngleRad());
-    //     SmartDashboard.putNumber(m_label + " Turn Position Setpoint (rad)", 
-    //         getTurnPosSetpointRad());
-    //     SmartDashboard.putNumber(m_label + " Turn Velocity Setpoint (rad/s)", 
-    //         getTurnVelSetpointRps());
-    //     SmartDashboard.putNumber(m_label + " Turn Position Error (rad)", 
-    //         getTurnPosErrorRad());
-    //     SmartDashboard.putNumber(m_label + " Turn Velocity Error (rad/s)", 
-    //         getTurnVelErrorRps());
-    //     SmartDashboard.putNumber(m_label + " Turn Feed-forward Output (V)", 
-    //         getTurnFeedforwardOutputV());
-    //     SmartDashboard.putNumber(m_label + " Turn PID Output (V)", 
-    //         getTurnPidOutputV());
-    // }
-
-
 
     //-------------------------------------------------------------------------------------------//
     /*                            CONSTRUCTOR AND PERIODIC METHODS                               */
@@ -346,23 +343,25 @@ public class SwerveModule {
         if (Constants.Drivetrain.ENABLE_LOGGING) {
             m_log = DataLogManager.getLog();
             m_turnAbsEncLogEntry = 
-                new DoubleLogEntry(m_log, "/" + m_label + "/Turn Abs Enc (rad)");
+                new DoubleLogEntry(m_log, m_label + " Turn Abs Enc (rad)");
             m_turnRelEncLogEntry = 
-                new DoubleLogEntry(m_log, "/" + m_label + "/Turn Rel Enc (rad)");
+                new DoubleLogEntry(m_log, m_label + " Turn Rel Enc (rad)");
             m_driveEncLogEntry = 
-                new DoubleLogEntry(m_log, "/" + m_label + "/Drive Rel Enc (mps)");
+                new DoubleLogEntry(m_log, m_label + " Drive Rel Enc (mps)");
             m_turnPosSetpointLogEntry = 
-                new DoubleLogEntry(m_log, "/" + m_label + "/Turn Position Setpoint (rad)");
+                new DoubleLogEntry(m_log, m_label + " Turn Position Setpoint (rad)");
             m_turnVelSetpointLogEntry = 
-                new DoubleLogEntry(m_log, "/" + m_label + "/Turn Velocity Setpoint (rad/s)");
+                new DoubleLogEntry(m_log, m_label + " Turn Velocity Setpoint (rad/s)");
             m_turnPosErrorLogEntry = 
-                new DoubleLogEntry(m_log, "/" + m_label + "/Turn Position Error (rad)");
+                new DoubleLogEntry(m_log, m_label + " Turn Position Error (rad)");
             m_turnVelErrorLogEntry = 
-                new DoubleLogEntry(m_log, "/" + m_label + "/Turn Velocity Error (rad/s)");
+                new DoubleLogEntry(m_log, m_label + " Turn Velocity Error (rad/s)");
             m_turnFeedforwardOutLogEntry = 
-                new DoubleLogEntry(m_log, "/" + m_label + "/Turn Feed-forward Output (V)");
+                new DoubleLogEntry(m_log, m_label + " Turn Feed-forward Output (V)");
             m_turnPidOutLogEntry = 
-                new DoubleLogEntry(m_log, "/" + m_label + "/Turn PID Output (V)");
+                new DoubleLogEntry(m_log, m_label + " Turn PID Output (V)");
+            m_isHomedLogEntry =
+                new BooleanLogEntry(m_log, m_label + " Is Homed");
         } else {
             m_log = null;
             m_turnAbsEncLogEntry = null;
@@ -374,6 +373,7 @@ public class SwerveModule {
             m_turnVelErrorLogEntry = null;
             m_turnFeedforwardOutLogEntry = null;
             m_turnPidOutLogEntry = null;
+            m_isHomedLogEntry = null;
         }
 
     }
