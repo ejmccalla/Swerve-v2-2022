@@ -18,7 +18,6 @@ import edu.wpi.first.util.datalog.DoubleLogEntry;
 import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DutyCycleEncoder;
 import edu.wpi.first.wpilibj.Encoder;
-//import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Calibrations;
 import frc.robot.Constants;
 
@@ -56,7 +55,7 @@ public class SwerveModule {
     private final double m_baseConversion;
     private final DataLog m_log;
     private boolean m_isHomed;
-    private SwerveModuleState m_setState;
+    private SwerveModuleState m_setDesiredState;
     private double m_turnFeedForwardOutput;
     private double m_driveFeedForwardOutput;
     private double m_turnPidOutput;
@@ -79,7 +78,7 @@ public class SwerveModule {
 
 
     /**
-     * Method to log the telemetry to disk.
+     * Log the telemetry data to disk using the WPILib logger.
      */
     public void logTelemetry() {
         if (Constants.Drivetrain.ENABLE_LOGGING) {
@@ -98,11 +97,14 @@ public class SwerveModule {
 
     /**
      * Get the current state of the swerve module as a drive speed in meters-per-second and an
-     * angle represented as a 2D rotation.
+     * angle represented as a Rotation2D object.
+     *
+     * <p>If the module has been homed, the Rotation2D is based on the angle of the relative
+     * encoder. Otherwise, the Rotation2D is based on the angle of the absolute encoder. 
      *
      * @return the current state of the swerve module
      */
-    public SwerveModuleState getState() {
+    public SwerveModuleState getCurrentState() {
         if (m_isHomed) {
             return new SwerveModuleState(getDriveEncVelMps(), 
                                          new Rotation2d(getTurnRelEncAngleRad()));
@@ -126,10 +128,15 @@ public class SwerveModule {
         }
     }
 
-    /** Use the absolute encoder to home the swerve module.
+    /**
+     * Use the absolute encoder to home the swerve module.
      *
      * <p>The turning output voltage is calculated using a combination of the feedback and
-     * feedforward controllers. The absolute encoder is used for feedback.
+     * feedforward controllers. The absolute encoder is used for feedback and the modelled model
+     * coeeficients are used for the feed-forward. If the controller is already at the goal, the
+     * motor outputs are set to 0 and the module state is updated to reflect the completion of the
+     * homing.
+     * 
     */
     public void homeModule() {
         if (m_turnController.atGoal()) {
@@ -148,9 +155,9 @@ public class SwerveModule {
     }
 
     /**
-     * Return the homing state of the module.
+     * Get the homing state of the module.
      *
-     * @return true if the module is homes, otherwise false
+     * @return true if the module is homed, otherwise false
      */
     public boolean getIsHomed() {
         return m_isHomed;
@@ -159,26 +166,28 @@ public class SwerveModule {
     /**
      * Set the desired state of the swerve module.
      *
-     * <p>The input swerve state is a speed in meters per second and an angle represented as a 2D
-     * rotation. The desired angle is first optimized to keep the wheel from turning more than 90
-     * degrees. This is done by allowing the wheel to reverse the current drive direction. Next, the
-     * turning and driving output voltages are calculated using a combination of the feedback and
-     * feedforward controllers. Finally, the turning and driving output voltages are sent out to
+     * <p>The input swerve state is a speed in meters-per-second and an angle represented as a
+     * Rotation2D object. The desired angle is first optimized to keep the wheel from turning more
+     * than 90 degrees. This is done by allowing the wheel to reverse the current drive direction.
+     * Next, the turning and driving output voltages are calculated using a combination of feedback
+     * and feedforward controllers. Finally, the turning and driving output voltages are sent out to
      * the motors.
      *
      * @param state the desired state of the swerve module
      */
-    public void setState(SwerveModuleState state) {
-        m_setState = SwerveModuleState.optimize(state, new Rotation2d(getTurnRelEncAngleRad()));
+    public void setDesiredState(SwerveModuleState state) {
+        m_setDesiredState =
+            SwerveModuleState.optimize(state, new Rotation2d(getTurnRelEncAngleRad()));
 
         m_turnPidOutput = 
-            m_turnController.calculate(getTurnRelEncAngleRad(), m_setState.angle.getRadians());
+            m_turnController.calculate(getTurnRelEncAngleRad(), 
+                                       m_setDesiredState.angle.getRadians());
         m_turnFeedForwardOutput = 
             m_turnFeedForward.calculate(m_turnController.getSetpoint().velocity);
 
         m_drivePidOutput =
-            m_driveController.calculate(getDriveEncVelMps(), 
-                                        m_setState.speedMetersPerSecond);
+            m_driveController.calculate(getDriveEncVelMps(),
+                                        m_setDesiredState.speedMetersPerSecond);
         m_driveFeedForwardOutput =
             m_driveFeedForward.calculate(state.speedMetersPerSecond);
 
@@ -194,7 +203,7 @@ public class SwerveModule {
     /**
      * Get the turning absolute encoder position and convert it to an angle.
      *
-     * @return the angle in radians.
+     * @return the angle in radians
      */
     private double getTurnAbsEncAngleRad() {
         return m_turnAbsEnc.getAbsolutePosition() * 2.0 * Math.PI;
@@ -204,7 +213,7 @@ public class SwerveModule {
      * Get the turning relative encoder distance which already has the raw encoder counts to
      * radians conversion baked in.
      *
-     * @return the angle in radians. 
+     * @return the angle in radians 
      */
     private double getTurnRelEncAngleRad() {
         return m_turnRelEnc.getDistance();
@@ -214,7 +223,7 @@ public class SwerveModule {
      * Get the drive encoder velocity which already has the encoder RPM native units to
      * meters-per-second conversion baked in.
      *
-     * @return the velocity in meters-per-second.
+     * @return the velocity in meters-per-second
      */
     private double getDriveEncVelMps() {
         return m_driveEnc.getVelocity();
@@ -232,7 +241,7 @@ public class SwerveModule {
     /**
      * Get the current turning controller velocity setpoint.
      *
-     * @return the velocity setpoint in radians-per-second.
+     * @return the velocity setpoint in radians-per-second
      */
     private double getTurnVelSetpointRps() {
         return m_turnController.getSetpoint().velocity;
@@ -284,44 +293,56 @@ public class SwerveModule {
      * Constructor for a SparkMax swerve drive module using the RoboRIO to control both the
      * steering and driving.
      *
+     * @param label the module identifier
      * @param home the zero of the module in radians
      * @param turnMotorId the turning motor controller CAN ID
      * @param driveMotorId the driving motor controller CAN ID
      * @param pwmChannel the RoboRIO DIO channel number of the encoder PWM signal
      * @param quadChannelA the RoboRIO DIO channel number of the encoder quadrature A signal
      * @param quadChannelB the RoboRIO DIO channel number of the encoder quadrature B signal
+     * @param maxTurnVelRps the turning motor maximum angular velocity in radians-per-second
+     * @param maxTurnAccRpss the turning motor maximum angular acceleration in radians-per-second
+     * @param turnFeedforwardKs the turning motor FF model static coefficient
+     * @param turnFeedforwardKv the turning motor FF model velocity coefficient
+     * @param turnFeedforwardKa the turning motor FF model acceleration coefficient
+     * @param driveFeedforwardKs the driving motor FF model static coefficient
+     * @param driveFeedforwardKv the driving motor FF model velocity coefficient
+     * @param driveFeedforwardKa the driving motor FF model acceleration coefficient
      */
     public SwerveModule(String label, double home, int turnMotorId, int driveMotorId,
-                        int pwmChannel, int quadChannelA, int quadChannelB, double loopTime) {
+                        int pwmChannel, int quadChannelA, int quadChannelB, double maxTurnVelRps,
+                        double maxTurnAccRpss, double turnFeedforwardKs, double turnFeedforwardKv,
+                        double turnFeedforwardKa, double driveFeedforwardKs,
+                        double driveFeedforwardKv, double driveFeedforwardKa) {
         m_label = label;
         m_homeRad = home;
 
         m_turnMotor = new CANSparkMax(turnMotorId, MotorType.kBrushless);
         m_driveMotor = new CANSparkMax(driveMotorId, MotorType.kBrushless);
-        m_turnMotor.restoreFactoryDefaults();
-        m_driveMotor.restoreFactoryDefaults();
-        m_turnMotor.setIdleMode(IdleMode.kBrake);
-        m_driveMotor.setIdleMode(IdleMode.kBrake);
-
         m_turnAbsEnc = new DutyCycleEncoder(pwmChannel);
         m_turnRelEnc = new Encoder(quadChannelA, quadChannelB);
         m_driveEnc = m_driveMotor.getEncoder();
 
+        // TODO: Calibrate the velocity and acceleration constraints.
         m_profiledPidConstraints =
-            new TrapezoidProfile.Constraints(Calibrations.MAX_TURN_VELOCITY_RPS,
-                                             Calibrations.MAX_TURN_ACCELERATION_RPSS);
+            new TrapezoidProfile.Constraints(maxTurnVelRps, maxTurnAccRpss);
         m_turnController =
             new ProfiledPIDController(Calibrations.TURN_P_GAIN, 0.0, Calibrations.TURN_D_GAIN, 
-                                      m_profiledPidConstraints, loopTime);
+                                      m_profiledPidConstraints);
         m_driveController =
-            new PIDController(Calibrations.DRIVE_P_GAIN, 0.0, Calibrations.DRIVE_D_GAIN, loopTime);
+            new PIDController(Calibrations.DRIVE_P_GAIN, 0.0, Calibrations.DRIVE_D_GAIN);
 
+        // TODO: Calibrate the FF models.
         m_turnFeedForward =
-            new SimpleMotorFeedforward(Calibrations.DRIVE_FF_KS_GAIN,
-                                       Calibrations.DRIVE_FF_KV_GAIN);
+            new SimpleMotorFeedforward(driveFeedforwardKs, driveFeedforwardKv, driveFeedforwardKa);
         m_driveFeedForward =
-            new SimpleMotorFeedforward(Calibrations.TURN_FF_KS_GAIN,
-                                       Calibrations.TURN_FF_KV_GAIN);
+            new SimpleMotorFeedforward(turnFeedforwardKs, turnFeedforwardKv, turnFeedforwardKa);
+
+        // TODO: Configure motors - current limit, CAN frame rates, limit switches, etc.
+        m_turnMotor.restoreFactoryDefaults();
+        m_driveMotor.restoreFactoryDefaults();
+        m_turnMotor.setIdleMode(IdleMode.kBrake);
+        m_driveMotor.setIdleMode(IdleMode.kBrake);
         
         m_baseConversion = (Units.inchesToMeters(Calibrations.WHEEL_DIAMETER_INCH) * Math.PI
                             / Constants.Drivetrain.DRIVE_GEAR_RATIO);
@@ -330,11 +351,12 @@ public class SwerveModule {
         m_turnRelEnc.setDistancePerPulse(2.0 * Math.PI / Constants.Drivetrain.turnEncPpr);
         m_turnController.setTolerance(Units.degreesToRadians(Calibrations.MAX_TURN_ERROR_DEG));
         configureTurningController(true);
+
         m_driveEnc.setPosition(0);
         m_turnRelEnc.reset();
 
         m_isHomed = false;
-        m_setState = new SwerveModuleState(0.0, new Rotation2d(getTurnAbsEncAngleRad()));
+        m_setDesiredState = new SwerveModuleState(0.0, new Rotation2d(getTurnAbsEncAngleRad()));
         m_turnFeedForwardOutput = 0.0;
         m_driveFeedForwardOutput = 0.0;
         m_turnPidOutput = 0.0;
@@ -375,7 +397,6 @@ public class SwerveModule {
             m_turnPidOutLogEntry = null;
             m_isHomedLogEntry = null;
         }
-
     }
 
 }

@@ -1,7 +1,7 @@
 package frc.robot.lib;
 
 /**
- * Implement a swerve drive signal which includes the translational speeds, the rotational speed,
+ * Implement a swerve drive signal which captures the translational speeds, the rotational speed,
  * and a flag for field/robot oriented control.
  */
 public class SwerveDriveSignal {
