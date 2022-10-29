@@ -9,6 +9,16 @@ import edu.wpi.first.math.util.Units;
  */
 public final class Constants {
 
+
+    /**
+     * The DriverStation constants are port numbers used by the joysticks/button/controllers on the
+     * drivers station.
+     */
+    public static final class Driver {
+        public static final double MAX_DRIVE_VELOCITY_MPS = 3.0;
+        public static final double MAX_ROTATION_VELOCITY_RPS = 10.0;
+    }
+
     /**
      * The DriverStation constants are port numbers used by the joysticks/button/controllers on the
      * drivers station.
@@ -16,6 +26,7 @@ public final class Constants {
     public static final class DriverStation {
         public static final int LEFT_JOYSTICK = 0;
         public static final int RIGHT_JOYSTICK = 1;
+        public static final int DRIVER_BUTTON_BOARD = 2;
     }
 
     /**

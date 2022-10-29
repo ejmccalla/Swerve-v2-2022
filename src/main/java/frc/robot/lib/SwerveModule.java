@@ -134,15 +134,17 @@ public class SwerveModule {
      * <p>The turning output voltage is calculated using a combination of the feedback and
      * feedforward controllers. The absolute encoder is used for feedback and the modelled model
      * coeeficients are used for the feed-forward. If the controller is already at the goal, the
-     * motor outputs are set to 0 and the module state is updated to reflect the completion of the
-     * homing.
+     * motor outputs are set to 0, the module state is updated to reflect the completion of the
+     * homing, and the relative encoder is reset.
      * 
     */
-    public void homeModule() {
+    public void setHomedModuleState() {
         if (m_turnController.atGoal()) {
             m_isHomed = true;
+            m_turnRelEnc.reset();
             m_turnPidOutput = 0.0;
             m_turnFeedForwardOutput = 0.0;
+            
         } else {
             m_isHomed = false;
             m_turnPidOutput = 
@@ -195,6 +197,47 @@ public class SwerveModule {
         m_driveMotor.setVoltage(m_drivePidOutput + m_driveFeedForwardOutput);
     }
 
+    /**
+     * This command will output 0 volts to the drive and turning motors.
+     */
+    public void setIdle() {
+        m_turnMotor.setVoltage(0.0);
+        m_driveMotor.setVoltage(0.0);
+    }
+
+    /**
+     * Set the idle mode of the module motors.
+     *
+     * @param isBrakeDesired true sets brake mode, false sets coast mode
+     */
+    public void setModulesToBrakeMode(boolean isBrakeDesired) {
+        if (isBrakeDesired) {
+            m_turnMotor.setIdleMode(IdleMode.kBrake);
+            m_driveMotor.setIdleMode(IdleMode.kBrake);    
+        } else {
+            m_turnMotor.setIdleMode(IdleMode.kCoast);
+            m_driveMotor.setIdleMode(IdleMode.kCoast);    
+        }
+    }
+
+    /**
+     * Set the drive encoder postion to 0.
+     */
+    public void resetDriveEncoder() {
+        m_driveEnc.setPosition(0);
+    }
+
+    /**
+     * Get the drive encoder position in native units of rotations.
+     *
+     * @return the number of rotations
+     */
+    public double getDriveEncPosRot() {
+        return m_driveEnc.getPosition();
+    }
+
+
+
     //-------------------------------------------------------------------------------------------//
     /*                                     PRIVATE METHODS                                       */
     //-------------------------------------------------------------------------------------------//
@@ -227,7 +270,7 @@ public class SwerveModule {
      */
     private double getDriveEncVelMps() {
         return m_driveEnc.getVelocity();
-    }    
+    }
 
     /**
      * Get the current turning controller position setpoint.
@@ -341,19 +384,16 @@ public class SwerveModule {
         // TODO: Configure motors - current limit, CAN frame rates, limit switches, etc.
         m_turnMotor.restoreFactoryDefaults();
         m_driveMotor.restoreFactoryDefaults();
-        m_turnMotor.setIdleMode(IdleMode.kBrake);
-        m_driveMotor.setIdleMode(IdleMode.kBrake);
-        
+
         m_baseConversion = (Units.inchesToMeters(Calibrations.WHEEL_DIAMETER_INCH) * Math.PI
                             / Constants.Drivetrain.DRIVE_GEAR_RATIO);
-        m_driveEnc.setPositionConversionFactor(m_baseConversion);
+        //m_driveEnc.setPositionConversionFactor(m_baseConversion);
         m_driveEnc.setVelocityConversionFactor(m_baseConversion / 60.0);
         m_turnRelEnc.setDistancePerPulse(2.0 * Math.PI / Constants.Drivetrain.turnEncPpr);
         m_turnController.setTolerance(Units.degreesToRadians(Calibrations.MAX_TURN_ERROR_DEG));
         configureTurningController(true);
 
         m_driveEnc.setPosition(0);
-        m_turnRelEnc.reset();
 
         m_isHomed = false;
         m_setDesiredState = new SwerveModuleState(0.0, new Rotation2d(getTurnAbsEncAngleRad()));
