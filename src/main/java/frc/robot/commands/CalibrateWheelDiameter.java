@@ -3,6 +3,7 @@ package frc.robot.commands;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.CommandBase;
 import frc.robot.subsystems.Drivetrain;
+import frc.robot.subsystems.Drivetrain.StateType;
 
 /**
  * Implements a command to run to help with calibrating the wheel diameter.
@@ -24,23 +25,32 @@ public class CalibrateWheelDiameter extends CommandBase {
 
     /**
      * Set the swerve modules to coast mode (since the robot will manually be pushed) and reset
-     * the drive encoder to 0.
+     * the drive encoders to 0.
      */
     @Override
     public void initialize() {
+        m_drivetrain.updateState(StateType.Calibrating);
         m_drivetrain.setModulesToBrakeMode(false);
         m_drivetrain.resetModulesDriveEncoder();
     }
 
     /**
-     * Requesting idle will have the side-effect of setting all the swerve motor output to 0 volts.
+     * Set the swerve modules motor ouptuts to 0 volts.
      * The drive encoder positions are output to the smart dashboard for recording.
      */
     @Override
     public void execute() {
-        m_drivetrain.requestIdle();
+        m_drivetrain.setIdleModules();
         SmartDashboard.putNumberArray("Wheel Calibration Rotations",
                                       m_drivetrain.getModulesDriveRotations());
+    }
+
+    /**
+     * Update the drivetrain state when the command is finished.
+     */
+    @Override
+    public void end(boolean interrupted) {
+        m_drivetrain.updateState(StateType.Idle);
     }
 
 }

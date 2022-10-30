@@ -39,6 +39,23 @@ public final class Constants {
     }
 
     /**
+     * The Intake constants are port numbers and/or CAN ID's of the robot hardware which don't
+     * belong to an explicit sub-system.
+     */
+    public static final class Intake {
+        /** Switch to enable logging telemetry to disk. */
+        public static final boolean ENABLE_LOGGING = true;
+        /** CAN ID of the intake motor. */
+        public static final int MOTOR_ID = 0;
+        /** Port ID of the solenoid. */
+        public static final int SOLENOID_ID = 0;
+        /** Gear reduction. */
+        public static final double GEAR_RATIO = 1.0 / 3.0;
+        /** Roller diameter. */
+        public static final double ROLLER_DIAMETER_FT = 1.1 / 12.0;
+    }
+
+    /**
      * The Drivetrain constants are port numbers and/or CAN ID's of the robot hardware which don't
      * belong to an explicit sub-system.
      *

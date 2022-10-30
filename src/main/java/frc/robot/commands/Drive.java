@@ -7,9 +7,14 @@ import edu.wpi.first.wpilibj2.command.CommandBase;
 import frc.robot.Constants;
 import frc.robot.lib.SwerveDriveSignal;
 import frc.robot.subsystems.Drivetrain;
+import frc.robot.subsystems.Drivetrain.StateType;
 
 /**
  * Implements a command to drive the robot using driver inputs.
+ * 
+ * <p>This command is intended to be the default subsystem command. As such, there is no condition
+ * that ends the command and there's nothing to do when the command is finished (even if by being
+ * interrupted).
  */
 public class Drive extends CommandBase {
 
@@ -42,6 +47,23 @@ public class Drive extends CommandBase {
         addRequirements(m_drivetrain);
     }
 
+    /**
+     * Update the drivetrain state to indicate the subysystem is being driven manually.
+     * 
+     * <p>This command should be scheduled as non-interruptable.
+     */
+    @Override
+    public void initialize() {
+        m_drivetrain.updateState(StateType.Driving);
+    }
+
+    /**
+     * Compose the swerve drive signal.
+     * 
+     * <p>Each of the driver inputs (X and Y translational velocity and rotational velocity) are
+     * rate limited and have an appied deadband. These values should be set based on driver
+     * feedback.
+     */
     @Override
     public void execute() {
         m_speedX = MathUtil.applyDeadband(m_rateLimiterX.calculate(m_rightJoystick.getX()), 0.05);
@@ -52,10 +74,8 @@ public class Drive extends CommandBase {
         m_speedZ *= Constants.Driver.MAX_ROTATION_VELOCITY_RPS;
 
         // TODO: Review the need for the PID which holds the rotational angle when no rotation is
-        // called for
-
-        //m_drivetrain.requestDrive(new SwerveDriveSignal(m_speedX, m_speedY, m_speedZ));
-        m_drivetrain.requestDrive(new SwerveDriveSignal(0.0, 0.0, m_speedZ));
+        // commanded
+        m_drivetrain.setDesiredModulesState(new SwerveDriveSignal(m_speedX, m_speedY, m_speedZ));
 
     }
 

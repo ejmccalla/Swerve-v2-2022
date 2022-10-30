@@ -11,23 +11,31 @@ import edu.wpi.first.wpilibj.livewindow.LiveWindow;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import frc.robot.commands.CalibrateWheelDiameter;
+import frc.robot.commands.HomeSwerveModules;
 
 /**
- * This is the top-level class where the TimedRobot states are defined. 
- * {@link edu.wpi.first.wpilibj.IterativeRobotBase#loopFunc()}
+ * This is the top-level class where the {@link edu.wpi.first.wpilibj.TimedRobot} states 
+ * are defined.
  *
- * <p>This project is focused on testing the new mechanical design features used during the design
- * and build, as well as getting experience with the swerve software. Notably, the swerve drive
- * control will be leveraging those provided by WPILib and exteded with the Path Planner software
- * for path following. Another big part to the software is the extensive use of the WPILib data
- * logger. This is used to log telemetry and other useful data for analysis (failure prediction, 
- * and understaning, system tuning, and etc). Be sure to always use a USB thumb drive while
- * logging. To do this, be sure to format the thumb drive with a RoboRIO compatible FS (like FAT32)
- * and simply plug into one of the two USB ports on the RoboRIO.
+ * <p>This project is focused on testing the new mechanical design features used during the robot
+ * design and build as well as getting experience with the swerve software. Most notably, the
+ * swerve drive control will be leveraging the provided WPILib swerve functionality and exteded
+ * with thePath Planner software for path following. Another big part to the software is the
+ * extensive use of the WPILib data logger. This is used to log telemetry and other useful data for
+ * analysis (failure prediction and understaning, system tuning, and etc). Be sure to always use a
+ * USB thumb drive while logging. To do this, be sure to format the thumb drive with a RoboRIO
+ * compatible FS (like FAT32) and simply plug into one of the two USB ports on the RoboRIO.
+ *
+ * <p>The states are run based on {@link edu.wpi.first.wpilibj.IterativeRobotBase#loopFunc()}
+ *
+ * <p>This project uses the WPILib {@link edu.wpi.first.wpilibj2.command.CommandScheduler}. The
+ * {@link edu.wpi.first.wpilibj2.command.CommandScheduler#run()} method of the scheduler is
+ * called every iteration of the perdiodic loop.
  *
  * <p>The REV Robotics pressure sensor can be used for closed-loop control per the 2022 FRC game
  * rules.
  *
+ * @see <a href="https://github.com/mjansen4857/pathplanner">Path Planner</a>
  * @see <a href="https://docs.wpilib.org/en/stable/docs/software/telemetry/datalog.html">WPILib Logger</a>
  */
 public class Robot extends TimedRobot {
@@ -63,14 +71,6 @@ public class Robot extends TimedRobot {
      * Each of the subsystems will have their individual control and setup.
      * 
      * <p>5. Instantiate the robot container and thus all of the subsystems.
-     * 
-     * <p>6. Finally, the swerve module allignment needs to be handled. There are two choices: seed
-     * the relative azimuth encoder with the absolute azimuth encoder or home the wheels with the
-     * absolute azimuth encoder and set the relative azimuth encoder to 0 once homed. The first is
-     * ideal (not spending precious auto time homing the wheels), but it requires care to ensure
-     * the absolute azimuth encoder reading has reached steady-state before seeding the relative
-     * encoder. For now, run the homing sequence. This is accomplished by intializing the drivetrain
-     * state to <b>Homing</b>.
      */
     @Override
     public void robotInit() {
@@ -96,14 +96,23 @@ public class Robot extends TimedRobot {
      * This method is called only a single time at the start of autonomous. This is where the
      * autonomous-specific initialization code should go.
      *
-     * <p>1. Enable the command scheduler. This will being logging all of the subsytem telemetry,
+     * <p>1. Enable the command scheduler. This will begin logging all of the subsytem telemetry,
      * running the subsystem state machines, and processing commands.
      * 
-     * <p>2. TODO: autonomous command chooser
+     * <p>2. The swerve module allignment needs to be handled. There are two choices: seed the
+     * relative azimuth encoder with the absolute azimuth encoder or home the wheels with the
+     * absolute azimuth encoder and set the relative azimuth encoder to 0 once homed. The first is
+     * ideal (not spending precious auto time homing the wheels), but it requires care to ensure
+     * the absolute azimuth encoder reading has reached steady-state before seeding the relative
+     * encoder. For now, run the homing sequence. This is accomplished by intializing the drivetrain
+     * state to <b>Homing</b>.
+     *
+     * <p>3. TODO: autonomous command chooser
      */
     @Override
     public void autonomousInit() {
         m_commandScheduler.enable();
+        m_commandScheduler.schedule(new HomeSwerveModules(m_robotContainer.m_drivetrain));
         if (m_enableLogger) {
             m_modeLogEntry.append("Auto");
         }

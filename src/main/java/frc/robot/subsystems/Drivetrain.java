@@ -24,20 +24,36 @@ public class Drivetrain extends SubsystemBase {
     /**
      * The states of the drivetrain.
      *
-     * <p>Homing will run the homing routine on all of the modules. Drive is will apply the drive
-     * signal from the controller. PathFollowing will follow the given path trajectories.
+     * <p>Commands are responsible for setting the state of the drivetrain and are defined as
+     * follows:
+     *
+     * <p><b>Idle</b> - There are no commands currently using the subsystem.
+     *
+     * <p><b>Homing</b> - The swerve modules are homing.
+     *
+     * <p><b>Driving</b> - The driver is controlling the robot.
+     *
+     * <p><b>PathFollowing</b> - The robot is following a path.
+     *
+     * <p><b>Calibrating</b> - The robot is running a calibration command.
      */
-    private enum StateType {
+    public enum StateType {
+        Idle {
+            @Override
+            public String toString() {
+                return "Idle";
+            }
+        },
         Homing { 
             @Override
             public String toString() {
                 return "Homing";
             }
         },
-        Drive {
+        Driving {
             @Override
             public String toString() {
-                return "Drive";
+                return "Driving";
             }
         },
         PathFollowing {
@@ -46,10 +62,10 @@ public class Drivetrain extends SubsystemBase {
                 return "Path Following";
             }
         },
-        Idle {
+        Calibrating {
             @Override
             public String toString() {
-                return "Idle";
+                return "Calibrating";
             }
         },
     }
@@ -63,10 +79,9 @@ public class Drivetrain extends SubsystemBase {
     private SwerveModuleState[] m_desiredModulesState;
     private ChassisSpeeds m_chassisSpeeds;
     private boolean m_areAllModulesHomed;
-    private SwerveDriveSignal m_driveSignal;
     private boolean m_isFieldOriented;
+    private Rotation2d m_imuYawAngleRot2D;
     private StateType m_currentState;
-    private StateType m_desiredState;
     private StringLogEntry m_stateLogEntry;
 
 
@@ -76,43 +91,79 @@ public class Drivetrain extends SubsystemBase {
 
 
     /**
+     * Set all of the swerve module motor outputs to 0 volts.
+     */
+    public void setIdleModules() {
+        for (int i = 0; i < Constants.Drivetrain.numModules; i++) {
+            m_modules[i].setIdle();
+        }
+    }
+
+
+    /**
+     * Set the state of the swerve modules to turn to their home position.
+     */
+    public void setHomedModulesState() {
+        m_areAllModulesHomed = true;
+        for (int i = 0; i < Constants.Drivetrain.numModules; i++) {
+            m_modules[i].setHomedModuleState();
+            m_areAllModulesHomed = m_areAllModulesHomed && m_modules[i].getIsHomed();
+        }
+
+    }
+
+    /** 
+     * Set the state of the swerve modules to perform the desired auto/teleop command.
+     */
+    public void setDesiredModulesState(SwerveDriveSignal driveSignal) {
+        if (m_isFieldOriented) {
+            m_chassisSpeeds = 
+                ChassisSpeeds.fromFieldRelativeSpeeds(driveSignal.getxSpeed(),
+                                                      driveSignal.getySpeed(),
+                                                      driveSignal.getRotationalSpeed(),
+                                                      m_imuYawAngleRot2D);
+        } else {
+            m_chassisSpeeds = new ChassisSpeeds(driveSignal.getxSpeed(),
+                                                driveSignal.getySpeed(),
+                                                driveSignal.getRotationalSpeed());
+        }
+        m_desiredModulesState = m_kinematics.toSwerveModuleStates(m_chassisSpeeds);
+
+        // TODO: Calibrate the velocity constraint.
+        SwerveDriveKinematics.desaturateWheelSpeeds(m_desiredModulesState, 
+                                                    Calibrations.MAX_DRIVE_VELOCITY_MPS);
+        for (int i = 0; i < Constants.Drivetrain.numModules; i++) {
+            m_modules[i].setDesiredState(m_desiredModulesState[i]);
+        }
+    }
+
+    /**
+     * Update the state of the drivetrain.
+     * 
+     * <p>The state will be updated by the commands which use the drivetrain subsystem.
+     *
+     * @param state the drivetrain state
+     */
+    public void updateState(StateType state) {
+        m_currentState = state;
+    }
+
+    /**
+     * Check if all of the swerve modules have completed the homing sequence.
+     *
+     * @return true if all the modules are homed, otherwise false
+     */
+    public boolean getAreAllModulesHomed() {
+        return m_areAllModulesHomed;
+    }
+
+    /**
      * Set whether the drive commands are field oriented or robot oriented.
      *
      * @param isFieldOriented true for field oriented drive, false for robot oriented drive
      */
     public void setIsFieldOriented(boolean isFieldOriented) {
         m_isFieldOriented = isFieldOriented;
-    }
-
-    /**
-     * Request to drive the robot using controllers.
-     *
-     * <p>This will set the swerve drive signal and the desired state to <b>Drive</b>. This should
-     * be called by a command.
-     *
-     * @param driveSignal translational speeds and rotational speed
-     */
-    public void requestDrive(SwerveDriveSignal driveSignal) {
-        m_driveSignal = driveSignal;
-        m_desiredState = StateType.Drive;
-    }
-
-    /**
-     * Request to home the swerve modules.
-     *
-     * <p>This will set the desired state to <b>Homing</b>. This should be called by a command.
-     */
-    public void requestHoming() {
-        m_desiredState = StateType.Homing;
-    }
-
-    /**
-     * Request to set the all swerve motor output to 0 volts.
-     *
-     * <p>This will set the desired state to <b>Idle</b>. This should be called by a command.
-     */
-    public void requestIdle() {
-        m_desiredState = StateType.Idle;
     }
 
     /**
@@ -152,7 +203,7 @@ public class Drivetrain extends SubsystemBase {
     public double[] getModulesDriveRotations() {
         double[] rotations = new double[Constants.Drivetrain.numModules];
         for (int i = 0; i < Constants.Drivetrain.numModules; i++) {
-            m_modules[i].getDriveEncPosRot();
+            rotations[i] = m_modules[i].getDriveEncPosRot();
         }
         return rotations;
     }
@@ -180,72 +231,6 @@ public class Drivetrain extends SubsystemBase {
             m_modules[i].logTelemetry();
         }
     }
-
-    /**
-     * This will set all of the module motors output to 0 volts.
-     */
-    private void setModulesToIdle() {
-        for (int i = 0; i < Constants.Drivetrain.numModules; i++) {
-            m_modules[i].setIdle();
-        }
-    }
-
-    /**
-     * Update the swerve odometry with the current swerve modules state.
-     */
-    private void updateOdometry() {
-        for (int i = 0; i < Constants.Drivetrain.numModules; i++) {
-            m_currentModulesState[i] = m_modules[i].getCurrentState();
-        }
-        m_odometry.update(getImuYawAngleRot(), m_currentModulesState);
-    }
-
-    /**
-     * Get the yaw angle of the IMU.
-     *
-     * @return the IMU yaw angle as a Rotation2D object
-     */
-    private Rotation2d getImuYawAngleRot() {
-        return Rotation2d.fromDegrees(m_imu.getAngle());
-    }
-
-    /** 
-     * Set the state of the swerve modules to perform the desired auto/teleop command.
-     */
-    private void setDesiredModulesState() {
-        if (m_isFieldOriented) {
-            m_chassisSpeeds = 
-                ChassisSpeeds.fromFieldRelativeSpeeds(m_driveSignal.getxSpeed(),
-                                                      m_driveSignal.getySpeed(),
-                                                      m_driveSignal.getRotationalSpeed(),
-                                                      getImuYawAngleRot());
-        } else {
-            m_chassisSpeeds = new ChassisSpeeds(m_driveSignal.getxSpeed(),
-                                                m_driveSignal.getySpeed(),
-                                                m_driveSignal.getRotationalSpeed());
-        }
-        m_desiredModulesState = m_kinematics.toSwerveModuleStates(m_chassisSpeeds);
-
-        // TODO: Calibrate the velocity constraint.
-        SwerveDriveKinematics.desaturateWheelSpeeds(m_desiredModulesState, 
-                                                    Calibrations.MAX_DRIVE_VELOCITY_MPS);
-        for (int i = 0; i < Constants.Drivetrain.numModules; i++) {
-            m_modules[i].setDesiredState(m_desiredModulesState[i]);
-        }
-    }
-
-    /**
-     * Set the state of the swerve modules to turn to their home position.
-     */
-    private void setHomedModulesState() {
-        m_areAllModulesHomed = true;
-        for (int i = 0; i < Constants.Drivetrain.numModules; i++) {
-            m_modules[i].setHomedModuleState();
-            m_areAllModulesHomed = m_areAllModulesHomed && m_modules[i].getIsHomed();
-        }
-
-    }
-
 
     //-------------------------------------------------------------------------------------------//
     /*                            CONSTRUCTOR AND PERIODIC METHODS                               */
@@ -283,11 +268,10 @@ public class Drivetrain extends SubsystemBase {
         m_imu = new ADIS16470_IMU();
         m_odometry = new SwerveDriveOdometry(m_kinematics, Rotation2d.fromDegrees(0.0));
         m_chassisSpeeds = new ChassisSpeeds(0.0, 0.0, 0.0);
-        m_currentState = StateType.Homing;
-        m_desiredState = StateType.Idle;
+        m_currentState = StateType.Idle;
         m_areAllModulesHomed = false;
-        m_driveSignal = new SwerveDriveSignal(0.0, 0.0, 0.0);
         m_isFieldOriented = true;
+        m_imuYawAngleRot2D = new Rotation2d();
 
         if (Constants.Drivetrain.ENABLE_LOGGING) {
             m_log = DataLogManager.getLog();
@@ -302,68 +286,16 @@ public class Drivetrain extends SubsystemBase {
     /**
      * This method is called periodically by the command scheduler and is run before any of the
      * commands are serviced.
-     *
-     * <p>First, the telemetry (for both the drivetrain and the swerve modules) is logged and the
-     * odometry is updated. Next, the state machine will update. This includes updating the current
-     * state variable and setting the swerve module states or motor outputs. Finally, the desired
-     * state variable is reset to the <b>Idle</b> state. It is expected that one of the drivetrain
-     * commandswill overwrite this with one of the other states which does something.
-     *
-     * <p>The <b>Idle</b> state is the default state when no other states have been requested. In
-     * this state the swerve modules turning and driving motor outputs are set to 0 volts. The
-     * current state is updated to the desired state.
-     *
-     * <p>The <b>Homing</b> state will call the homing routine for each of the swerve modules and
-     * then check to see if they're homed. If they're homed, the current state is updated to the
-     * desired state. If they're not homed, the current state is left unchanged. This state should
-     * only ever be set when the robot is initially powered on. This is the only state which can
-     * block the current state being updated to the desired state. As such, it is important to
-     * ensure that the module homing routine is robust.
-     *
-     * <p>The <b>Drive</b> state will take the drive signal, convert it to the desired swerve
-     * module state, and apply the states to the swerve modules. The current state is updated to
-     * the desired state.
-     *
-     * <p>The <b>PathFollowing</b> state will TODO: add autonomous.
-     *
-     * <p>The <b>default</b> state, which should never happen, will apply 0 volts to the swerve
-     * modules turning and driving motor outputs. The current state is updated to
-     * the desired state.
      */
     @Override 
     public void periodic() {
-
+        m_imuYawAngleRot2D =  Rotation2d.fromDegrees(m_imu.getAngle());
+        for (int i = 0; i < Constants.Drivetrain.numModules; i++) {
+            m_currentModulesState[i] = m_modules[i].getCurrentState();
+        }
+        m_odometry.update(m_imuYawAngleRot2D, m_currentModulesState);
         logModulesTelemetry();
         logTelemetry();
-        updateOdometry();
-
-        StateType nextState = m_currentState;
-        switch (m_currentState) {
-            case Idle:
-                setModulesToIdle();
-                nextState = m_desiredState;
-                break;
-
-            case Homing:
-                m_areAllModulesHomed = true;
-                setHomedModulesState();
-                //TODO: Add a timeout to the homing routine.
-                if (m_areAllModulesHomed) {
-                    nextState = m_desiredState;
-                }
-                break;
-
-            case Drive:
-                setDesiredModulesState();
-                nextState = m_desiredState;
-                break;
-
-            default:
-                setModulesToIdle();
-                nextState = StateType.Idle;
-        }
-        m_currentState = nextState;
-        m_desiredState = StateType.Idle;
     }
 
 }
