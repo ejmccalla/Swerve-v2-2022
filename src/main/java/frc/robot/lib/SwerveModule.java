@@ -139,18 +139,18 @@ public class SwerveModule {
      * 
     */
     public void setHomedModuleState() {
+        m_turnPidOutput = 
+            m_turnController.calculate(getTurnAbsEncAngleRad(), m_homeRad);
+        m_turnFeedForwardOutput = 
+            m_turnFeedForward.calculate(m_turnController.getSetpoint().velocity);
+
+        m_isHomed = false;
         if (m_turnController.atGoal()) {
             m_isHomed = true;
             m_turnRelEnc.reset();
+            m_driveEnc.setPosition(0);
             m_turnPidOutput = 0.0;
             m_turnFeedForwardOutput = 0.0;
-            
-        } else {
-            m_isHomed = false;
-            m_turnPidOutput = 
-                m_turnController.calculate(getTurnAbsEncAngleRad(), m_homeRad);
-            m_turnFeedForwardOutput = 
-                m_turnFeedForward.calculate(m_turnController.getSetpoint().velocity);
         }
         m_turnMotor.setVoltage(m_turnPidOutput + m_turnFeedForwardOutput);
         m_driveMotor.setVoltage(0.0);
@@ -391,7 +391,6 @@ public class SwerveModule {
         m_driveEnc.setVelocityConversionFactor(m_baseConversion / 60.0);
         m_turnRelEnc.setDistancePerPulse(2.0 * Math.PI / Constants.Drivetrain.turnEncPpr);
         m_turnController.setTolerance(Units.degreesToRadians(Calibrations.MAX_TURN_ERROR_DEG));
-        configureTurningController(true);
 
         m_driveEnc.setPosition(0);
 

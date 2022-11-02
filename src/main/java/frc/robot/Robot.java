@@ -112,7 +112,7 @@ public class Robot extends TimedRobot {
     @Override
     public void autonomousInit() {
         m_commandScheduler.enable();
-        m_commandScheduler.schedule(new HomeSwerveModules(m_robotContainer.m_drivetrain));
+        m_commandScheduler.schedule(false, new HomeSwerveModules(m_robotContainer.m_drivetrain));
         if (m_enableLogger) {
             m_modeLogEntry.append("Auto");
         }
@@ -145,6 +145,7 @@ public class Robot extends TimedRobot {
     @Override
     public void teleopInit() {
         m_commandScheduler.enable();
+        m_commandScheduler.schedule(false, new HomeSwerveModules(m_robotContainer.m_drivetrain));
         if (m_enableLogger) {
             m_modeLogEntry.append("Teleop");
         }        

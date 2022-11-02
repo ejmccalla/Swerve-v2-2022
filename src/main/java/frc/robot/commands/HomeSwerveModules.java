@@ -29,6 +29,7 @@ public class HomeSwerveModules extends CommandBase {
     @Override
     public void initialize() {
         m_drivetrain.updateState(StateType.Homing);
+        m_drivetrain.configureModulesTurningController(false);
     }
 
     /**
@@ -60,6 +61,7 @@ public class HomeSwerveModules extends CommandBase {
     @Override
     public void end(boolean interrupted) {
         m_drivetrain.updateState(StateType.Idle);
+        m_drivetrain.configureModulesTurningController(true);
     }
 
 }

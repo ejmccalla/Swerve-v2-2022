@@ -46,7 +46,7 @@ public final class Constants {
         /** Switch to enable logging telemetry to disk. */
         public static final boolean ENABLE_LOGGING = true;
         /** CAN ID of the intake motor. */
-        public static final int MOTOR_ID = 0;
+        public static final int MOTOR_ID = 13;
         /** Port ID of the solenoid. */
         public static final int SOLENOID_ID = 0;
         /** Gear reduction. */

@@ -81,8 +81,8 @@ public class Intake extends SubsystemBase {
             m_pidController.setReference(Calibrations.Intake.retractedTargetRpm, 
                                          CANSparkMax.ControlType.kVelocity);
         } else {
-            m_solenoid.set(false);
-            m_currentState = StateType.Retracted;
+            m_solenoid.set(true);
+            m_currentState = StateType.Extended;
             m_pidController.setReference(Calibrations.Intake.extendedTargetRpm,
                                          CANSparkMax.ControlType.kVelocity);
         }
@@ -135,7 +135,7 @@ public class Intake extends SubsystemBase {
         m_pidController.setD(Calibrations.Intake.P);
         m_pidController.setIZone(0);
         m_pidController.setFF(Calibrations.Intake.FF);
-        m_pidController.setOutputRange(-1, 0);
+        m_pidController.setOutputRange(-1, 1);
 
         m_encoder = m_motor.getEncoder();
         m_encoder.setVelocityConversionFactor(Constants.Intake.ROLLER_DIAMETER_FT * Math.PI
@@ -167,6 +167,13 @@ public class Intake extends SubsystemBase {
     @Override 
     public void periodic() {
         logTelemetry();
+        if (m_currentState == StateType.Extended) {
+            m_pidController.setReference(Calibrations.Intake.extendedTargetRpm,
+                                         CANSparkMax.ControlType.kVelocity);
+        } else {
+            m_pidController.setReference(Calibrations.Intake.retractedTargetRpm, 
+                                         CANSparkMax.ControlType.kVelocity);
+        }
     }
 
 }

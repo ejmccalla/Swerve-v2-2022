@@ -9,15 +9,12 @@ public final class Calibrations {
      * Calibration specific to the intake subsystem.
      */
     public static final class Intake {
-        public static final double P = 0.0;
+        public static final double P = 6e-5;
         public static final double D = 0.0;
-        public static final double FF = 0.0;
-        public static final double extendedTargetRpm = 
-            0.9 * (11000.0 * Constants.Intake.GEAR_RATIO);
+        public static final double FF = 0.000015;
+        public static final double extendedTargetRpm = 0.9 * 11000.0;
         public static final double retractedTargetRpm = 0.0;
     }
-
-
 
     /** 
      * The average wheel diameter (best: calibrate with encoders, ok: use tape measure).
@@ -197,7 +194,7 @@ public final class Calibrations {
      *
      * @implNote This should be tuned before each event minimum
      */
-    public static final double TURN_P_GAIN = 2.5;
+    public static final double TURN_P_GAIN = 0.5;
 
 
     /**

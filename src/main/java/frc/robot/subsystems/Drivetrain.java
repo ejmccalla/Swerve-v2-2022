@@ -107,10 +107,23 @@ public class Drivetrain extends SubsystemBase {
         m_areAllModulesHomed = true;
         for (int i = 0; i < Constants.Drivetrain.numModules; i++) {
             m_modules[i].setHomedModuleState();
-            m_areAllModulesHomed = m_areAllModulesHomed && m_modules[i].getIsHomed();
+            m_areAllModulesHomed = false; //m_areAllModulesHomed && m_modules[i].getIsHomed();
         }
 
     }
+
+    /**
+     * Configure the profiled PID turning controller for either homing (using the absolute encoder)
+     * or auto/teleop (using the relative encoder).
+     *
+     * @param configureForHoming true to configure for homing, false to configure for auto/teleop
+     */
+    public void configureModulesTurningController(boolean configureForHoming) {
+        for (int i = 0; i < Constants.Drivetrain.numModules; i++) {
+            m_modules[i].configureTurningController(configureForHoming);
+        }
+    }
+
 
     /** 
      * Set the state of the swerve modules to perform the desired auto/teleop command.
