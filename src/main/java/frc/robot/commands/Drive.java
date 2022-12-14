@@ -75,7 +75,9 @@ public class Drive extends CommandBase {
 
         // TODO: Review the need for the PID which holds the rotational angle when no rotation is
         // commanded
-        m_drivetrain.setDesiredModulesState(new SwerveDriveSignal(m_speedX, m_speedY, m_speedZ));
+        //m_drivetrain.setDesiredModulesState(new SwerveDriveSignal(m_speedX, m_speedY, m_speedZ));
+        m_drivetrain.setIdleModules();
+
 
     }
 

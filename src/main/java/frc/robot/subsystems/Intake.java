@@ -97,7 +97,7 @@ public class Intake extends SubsystemBase {
      * Log the telemetry data to disk using the WPILib logger.
      */
     private void logTelemetry() {
-        if (Constants.Drivetrain.ENABLE_LOGGING) {
+        if (Constants.Intake.ENABLE_LOGGING) {
             m_rollerLinearVelocityMps.append(m_encoder.getVelocity());
             m_stateLogEntry.append(m_currentState.toString());
         }

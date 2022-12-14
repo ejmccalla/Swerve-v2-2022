@@ -44,7 +44,7 @@ public final class Constants {
      */
     public static final class Intake {
         /** Switch to enable logging telemetry to disk. */
-        public static final boolean ENABLE_LOGGING = true;
+        public static final boolean ENABLE_LOGGING = false;
         /** CAN ID of the intake motor. */
         public static final int MOTOR_ID = 13;
         /** Port ID of the solenoid. */
@@ -63,7 +63,7 @@ public final class Constants {
      */
     public static final class Drivetrain {
         /** Switch to enable logging telemetry to disk. */
-        public static final boolean ENABLE_LOGGING = true;
+        public static final boolean ENABLE_LOGGING = false;
         /** Module order: front left, front right, rear left, rear right. */
         public static final String[] MODULE_LABELS = {"FL", "FR", "RL", "RR"};
         /** Module order: front left, front right, rear left, rear right. */

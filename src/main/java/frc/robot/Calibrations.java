@@ -149,7 +149,7 @@ public final class Calibrations {
      * @implNote This should be measured before each event minimum
      */
     public static final double[] MAX_TURN_VELOCITY_RPS = 
-        {20 * Math.PI, 20 * Math.PI, 20 * Math.PI, 20 * Math.PI};
+        {10 * Math.PI, 10 * Math.PI, 10 * Math.PI, 10 * Math.PI};
 
 
     /**
@@ -184,7 +184,7 @@ public final class Calibrations {
      * @implNote This should be tuned before each event minimum
      */
     public static final double[] MAX_TURN_ACCELERATION_RPSS = 
-        {20 * Math.PI, 20 * Math.PI, 20 * Math.PI, 20 * Math.PI};
+        {10 * Math.PI, 10 * Math.PI, 10 * Math.PI, 10 * Math.PI};
 
 
     /**
@@ -194,7 +194,7 @@ public final class Calibrations {
      *
      * @implNote This should be tuned before each event minimum
      */
-    public static final double TURN_P_GAIN = 0.5;
+    public static final double TURN_P_GAIN = 8.0;
 
 
     /**

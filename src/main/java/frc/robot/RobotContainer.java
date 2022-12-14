@@ -1,9 +1,10 @@
 package frc.robot;
 
-import edu.wpi.first.wpilibj.Joystick;
-import edu.wpi.first.wpilibj2.command.InstantCommand;
-import edu.wpi.first.wpilibj2.command.button.JoystickButton;
-import frc.robot.commands.Drive;
+// import edu.wpi.first.wpilibj.Joystick;
+// import edu.wpi.first.wpilibj2.command.InstantCommand;
+// import edu.wpi.first.wpilibj2.command.button.JoystickButton;
+// import frc.robot.commands.Drive;
+// import frc.robot.commands.HomeSwerveModules;
 import frc.robot.subsystems.Drivetrain;
 import frc.robot.subsystems.Intake;
 
@@ -13,10 +14,10 @@ import frc.robot.subsystems.Intake;
  */
 public class RobotContainer {
 
-    private final Joystick m_leftJoystick;
-    private final Joystick m_rightJoystick;
-    private final JoystickButton m_leftJoystickButton;
-    private final JoystickButton m_rightJoystickButton;
+    // private final Joystick m_leftJoystick;
+    // private final Joystick m_rightJoystick;
+    // private final JoystickButton m_leftJoystickButton;
+    // private final JoystickButton m_rightJoystickButton;
     public final Drivetrain m_drivetrain;
     public final Intake m_intake;
 
@@ -45,29 +46,28 @@ public class RobotContainer {
      * robot-oriented.
      */
     public RobotContainer() {
-        m_leftJoystick = new Joystick(Constants.DriverStation.LEFT_JOYSTICK);
-        m_rightJoystick = new Joystick(Constants.DriverStation.RIGHT_JOYSTICK);
-        m_leftJoystickButton = new JoystickButton(m_leftJoystick, 1);
-        m_rightJoystickButton = new JoystickButton(m_rightJoystick, 1);
+        // m_leftJoystick = new Joystick(Constants.DriverStation.LEFT_JOYSTICK);
+        // m_rightJoystick = new Joystick(Constants.DriverStation.RIGHT_JOYSTICK);
+        // m_leftJoystickButton = new JoystickButton(m_leftJoystick, 1);
+        // m_rightJoystickButton = new JoystickButton(m_rightJoystick, 1);
         m_drivetrain = new Drivetrain();
         m_intake = new Intake(Constants.Intake.MOTOR_ID, Constants.Intake.SOLENOID_ID);
 
-        m_drivetrain.setDefaultCommand(new Drive(m_leftJoystick, m_rightJoystick, m_drivetrain));
+        // m_drivetrain.setDefaultCommand(new Drive(m_leftJoystick, m_rightJoystick, m_drivetrain));
 
         // TODO: This setup will only run robot-oriented while a button is held. This may not be
         // ideal is the drive ALWAYS wants to run in robot-oriented (maybe the IMU drift gets so
         // far off that field-oriented isn't useful)
-        m_rightJoystickButton.whenPressed(
-            new InstantCommand(() -> m_drivetrain.setIsFieldOriented(false), m_drivetrain)
-        );
-        m_rightJoystickButton.whenReleased(
-            new InstantCommand(() -> m_drivetrain.setIsFieldOriented(true), m_drivetrain)
-        );
-
-        m_leftJoystickButton.whenPressed(
-            new InstantCommand(() -> m_intake.toggleIntake(), m_intake)
-        );
-
+        // m_rightJoystickButton.whenPressed(
+        //     new InstantCommand(() -> m_drivetrain.setIsFieldOriented(false), m_drivetrain)
+        // );
+        // m_rightJoystickButton.whenReleased(
+        //     new InstantCommand(() -> m_drivetrain.setIsFieldOriented(true), m_drivetrain)
+        // );
+        // m_rightJoystickButton.whenPressed(new HomeSwerveModules(m_drivetrain));
+        // m_leftJoystickButton.whenPressed(
+        //     new InstantCommand(() -> m_intake.toggleIntake(), m_intake)
+        // );
 
     }
 

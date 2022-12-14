@@ -7,13 +7,14 @@ import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.util.datalog.DataLog;
 import edu.wpi.first.util.datalog.StringLogEntry;
-import edu.wpi.first.wpilibj.ADIS16470_IMU;
+// import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Calibrations;
 import frc.robot.Constants;
 import frc.robot.lib.SwerveDriveSignal;
 import frc.robot.lib.SwerveModule;
+import frc.robot.lib.ADIS16470;
 
 /**
  * Implements the swerve drivetrain using REV/SparkMax, swerve MK4 modules, CTRE mag encoders, and
@@ -72,7 +73,7 @@ public class Drivetrain extends SubsystemBase {
 
     private final SwerveModule[] m_modules;
     private final SwerveDriveKinematics m_kinematics;
-    private final ADIS16470_IMU m_imu;
+    private final ADIS16470 m_imu;
     private final SwerveDriveOdometry m_odometry;
     private final DataLog m_log;
     private SwerveModuleState[] m_currentModulesState;
@@ -107,20 +108,28 @@ public class Drivetrain extends SubsystemBase {
         m_areAllModulesHomed = true;
         for (int i = 0; i < Constants.Drivetrain.numModules; i++) {
             m_modules[i].setHomedModuleState();
-            m_areAllModulesHomed = false; //m_areAllModulesHomed && m_modules[i].getIsHomed();
+            m_areAllModulesHomed = m_areAllModulesHomed && m_modules[i].getIsHomed();
         }
-
     }
 
     /**
-     * Configure the profiled PID turning controller for either homing (using the absolute encoder)
-     * or auto/teleop (using the relative encoder).
-     *
-     * @param configureForHoming true to configure for homing, false to configure for auto/teleop
+     * Sets the commanded voltage of the turn motors.
+     * 
+     * @param voltage the voltage the motors is set to.
      */
-    public void configureModulesTurningController(boolean configureForHoming) {
+    public void setModulesTurnVoltage(double voltage) {
         for (int i = 0; i < Constants.Drivetrain.numModules; i++) {
-            m_modules[i].configureTurningController(configureForHoming);
+            m_modules[i].setTurnVoltage(voltage);
+        }
+    }
+
+    /**
+     * Reset the profiled PID turning controllers which will zero out the integral term and
+     * update the setpoint to the current angle of the absolute encoder.
+     */
+    public void resetModulesTurningController() {
+        for (int i = 0; i < Constants.Drivetrain.numModules; i++) {
+            m_modules[i].resetTurningController();
         }
     }
 
@@ -209,6 +218,15 @@ public class Drivetrain extends SubsystemBase {
     }
 
     /**
+     * Get the die temp of the IMU.
+     *
+     * @return the IMU die temp in degrees celcius
+     */
+    public double getImuTempDegC() {
+        return m_imu.getTemp();
+    }
+
+    /**
      * Get the drive encoder postion for all modules in their native units of rotations.
      *
      * @return the rotations of the swerve drive encoders
@@ -278,7 +296,7 @@ public class Drivetrain extends SubsystemBase {
             m_modules[i].setModulesToBrakeMode(false);
         }
         m_kinematics = new SwerveDriveKinematics(Constants.Drivetrain.MODULE_LOCATIONS);
-        m_imu = new ADIS16470_IMU();
+        m_imu = new ADIS16470();
         m_odometry = new SwerveDriveOdometry(m_kinematics, Rotation2d.fromDegrees(0.0));
         m_chassisSpeeds = new ChassisSpeeds(0.0, 0.0, 0.0);
         m_currentState = StateType.Idle;
@@ -305,6 +323,7 @@ public class Drivetrain extends SubsystemBase {
         m_imuYawAngleRot2D =  Rotation2d.fromDegrees(m_imu.getAngle());
         for (int i = 0; i < Constants.Drivetrain.numModules; i++) {
             m_currentModulesState[i] = m_modules[i].getCurrentState();
+            //SmartDashboard.putNumber("Abs Encoder "+i, m_currentModulesState[i].angle.getRadians());
         }
         m_odometry.update(m_imuYawAngleRot2D, m_currentModulesState);
         logModulesTelemetry();

@@ -1,5 +1,6 @@
 package frc.robot;
 
+import edu.wpi.first.util.datalog.BooleanLogEntry;
 import edu.wpi.first.util.datalog.DataLog;
 import edu.wpi.first.util.datalog.DoubleLogEntry;
 import edu.wpi.first.util.datalog.StringLogEntry;
@@ -10,8 +11,10 @@ import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.livewindow.LiveWindow;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import frc.robot.commands.CalibrateTurnFF;
 import frc.robot.commands.CalibrateWheelDiameter;
 import frc.robot.commands.HomeSwerveModules;
+import edu.wpi.first.wpilibj.DriverStation;
 
 /**
  * This is the top-level class where the {@link edu.wpi.first.wpilibj.TimedRobot} states 
@@ -48,8 +51,10 @@ public class Robot extends TimedRobot {
     private Compressor m_compressor;
     private double m_pressurePsi;
     private double m_imuYawAngleDeg;
+    private double m_imuTempDegC;
     private DoubleLogEntry m_pressureLogEntry;
     private DoubleLogEntry m_imuYawAngleLogEntry;
+    private DoubleLogEntry m_imuTempLogEntry;
     private DoubleLogEntry m_compressorCurrentLogEntry;
     private StringLogEntry m_modeLogEntry;
 
@@ -61,35 +66,48 @@ public class Robot extends TimedRobot {
      * <p>1. Disable all of the LiveWindow telemetry since it's not used and having it only eats up
      * bandwidth
      *
-     * <p>2. Disable the command scheduler to keep the subsystems from logging data. Any data which
-     * needs to be logged while the robot is disabled should be done so in this class.
-     * 
-     * <p>3. Disable the compressor to keep it from turning on during autonomous. The path-following
+     * <p>2. Disable the compressor to keep it from turning on during autonomous. The path-following
      * is tuned with the compressor off, so keep it off during auto to maintain accuracy.
      * 
-     * <p>4. If the logger is being used, start the log manager and setup all of the log entries.
+     * <p>3. If the logger is being used, start the log manager and setup all of the log entries.
      * Each of the subsystems will have their individual control and setup.
      * 
-     * <p>5. Instantiate the robot container and thus all of the subsystems.
+     * <p>4. Instantiate the robot container and thus all of the subsystems.
+     * 
+     * <p>5. Disable the command scheduler to keep the subsystems from logging data (run the
+     * scheculer once to initialize the logging and avoid loop overruns). Any data which needs to be
+     * logged while the robot is disabled should be done so in this class.
      */
     @Override
     public void robotInit() {
         LiveWindow.disableAllTelemetry();
-        m_commandScheduler = CommandScheduler.getInstance();
-        m_commandScheduler.disable();
+        m_robotContainer = new RobotContainer();
         m_compressor = new Compressor(Constants.Hardware.PCM_ID, PneumaticsModuleType.REVPH);
         m_compressor.disable();
+        m_pressurePsi = m_compressor.getPressure();
+        m_imuYawAngleDeg = m_robotContainer.m_drivetrain.getImuYawAngleDeg();
+        m_imuTempDegC = m_robotContainer.m_drivetrain.getImuTempDegC();
+        SmartDashboard.putNumber("Pressure (PSI)", m_pressurePsi);
+        SmartDashboard.putNumber("IMU Yaw Angle (deg)", m_imuYawAngleDeg);        
         if (m_enableLogger) {
             DataLogManager.start();
             DataLogManager.logNetworkTables(false);
             DataLog log = DataLogManager.getLog();
-            m_pressureLogEntry = new DoubleLogEntry(log, " Pressure (psi)");
-            m_compressorCurrentLogEntry = 
-                new DoubleLogEntry(log, "Compressor Current (A)");
-            m_modeLogEntry = new StringLogEntry(log, "FMS Mode");
+            m_pressureLogEntry = new DoubleLogEntry(log, "Pressure (psi)");
+            m_pressureLogEntry.append(m_pressurePsi);
+            m_compressorCurrentLogEntry = new DoubleLogEntry(log, "Compressor Current (A)");
+            m_compressorCurrentLogEntry.append(m_compressor.getCurrent());
             m_imuYawAngleLogEntry = new DoubleLogEntry(log, "IMU Yaw Angle (deg)");
+            m_imuYawAngleLogEntry.append(m_imuYawAngleDeg);
+            m_imuTempLogEntry = new DoubleLogEntry(log, "IMU Temp (degC");
+            m_imuTempLogEntry.append(m_imuTempDegC)
+            m_modeLogEntry = new StringLogEntry(log, "FMS Mode");
         }
-        m_robotContainer = new RobotContainer();
+        m_commandScheduler = CommandScheduler.getInstance();
+        m_commandScheduler.setPeriod(10);
+        m_commandScheduler.run();
+        m_commandScheduler.disable();
+        m_commandScheduler.setPeriod(0.020);
     }
 
     /**
@@ -112,7 +130,7 @@ public class Robot extends TimedRobot {
     @Override
     public void autonomousInit() {
         m_commandScheduler.enable();
-        m_commandScheduler.schedule(false, new HomeSwerveModules(m_robotContainer.m_drivetrain));
+        // m_commandScheduler.schedule(false, new HomeSwerveModules(m_robotContainer.m_drivetrain));
         if (m_enableLogger) {
             m_modeLogEntry.append("Auto");
         }
@@ -145,7 +163,7 @@ public class Robot extends TimedRobot {
     @Override
     public void teleopInit() {
         m_commandScheduler.enable();
-        m_commandScheduler.schedule(false, new HomeSwerveModules(m_robotContainer.m_drivetrain));
+        //m_commandScheduler.schedule(false, new HomeSwerveModules(m_robotContainer.m_drivetrain));
         if (m_enableLogger) {
             m_modeLogEntry.append("Teleop");
         }        
@@ -158,7 +176,7 @@ public class Robot extends TimedRobot {
      * method and should contain teleop-specific periodic code.
      *
      * <p>1. Log the compressor current. TODO: optimize power savings by conrolling the compressor
-     * based on the current pressure sensor reading and a air usage model.
+     * based on the current pressure sensor reading and an air usage model.
      */
     @Override
     public void teleopPeriodic() {
@@ -198,9 +216,11 @@ public class Robot extends TimedRobot {
         m_commandScheduler.run();
         m_pressurePsi = m_compressor.getPressure();
         m_imuYawAngleDeg = m_robotContainer.m_drivetrain.getImuYawAngleDeg();
+        m_imuTempDegC = m_robotContainer.m_drivetrain.getImuTempDegC();
         if (m_enableLogger) {
             m_pressureLogEntry.append(m_pressurePsi);
             m_imuYawAngleLogEntry.append(m_imuYawAngleDeg);
+            m_imuTempLogEntry.append(m_imuTempDegC);
         }        
         SmartDashboard.putNumber("Pressure (PSI)", m_pressurePsi);
         SmartDashboard.putNumber("IMU Yaw Angle (deg)", m_imuYawAngleDeg);
@@ -231,14 +251,18 @@ public class Robot extends TimedRobot {
      */
     @Override
     public void testInit() {
+        LiveWindow.disableAllTelemetry();
         m_commandScheduler.cancelAll();
-        m_commandScheduler.enable();
-        m_commandScheduler.schedule(false,
-            new CalibrateWheelDiameter(m_robotContainer.m_drivetrain));
+        // m_commandScheduler.enable();
+        // m_commandScheduler.schedule(false,
+        //     new CalibrateWheelDiameter(m_robotContainer.m_drivetrain));
+        // m_commandScheduler.schedule(new CalibrateTurnFF(m_robotContainer.m_drivetrain));
     }
 
     @Override
-    public void testPeriodic() {}
+    public void testPeriodic() {
+        m_robotContainer.m_drivetrain.setModulesTurnVoltage(4.0);
+    }
 
     @Override
     public void simulationInit() {}

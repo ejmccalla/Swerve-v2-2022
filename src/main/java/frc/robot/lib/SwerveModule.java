@@ -62,6 +62,7 @@ public class SwerveModule {
     private double m_drivePidOutput;
     private DoubleLogEntry m_turnAbsEncLogEntry;
     private DoubleLogEntry m_turnRelEncLogEntry;
+    private DoubleLogEntry m_turnRelEncVelocityLogEntry;
     private DoubleLogEntry m_driveEncLogEntry;
     private DoubleLogEntry m_turnPosSetpointLogEntry;
     private DoubleLogEntry m_turnVelSetpointLogEntry;
@@ -69,6 +70,7 @@ public class SwerveModule {
     private DoubleLogEntry m_turnVelErrorLogEntry;
     private DoubleLogEntry m_turnFeedforwardOutLogEntry;
     private DoubleLogEntry m_turnPidOutLogEntry;
+    private DoubleLogEntry m_turnApplidedVoltageLogEntry;
     private BooleanLogEntry m_isHomedLogEntry;
 
 
@@ -84,6 +86,7 @@ public class SwerveModule {
         if (Constants.Drivetrain.ENABLE_LOGGING) {
             m_turnAbsEncLogEntry.append(getTurnAbsEncAngleRad());
             m_turnRelEncLogEntry.append(getTurnRelEncAngleRad());
+            m_turnRelEncVelocityLogEntry.append(getTurnRelEncVelocityRps());
             m_driveEncLogEntry.append(getDriveEncVelMps());
             m_turnPosSetpointLogEntry.append(getTurnPosSetpointRad());
             m_turnVelSetpointLogEntry.append(getTurnVelSetpointRps());
@@ -91,6 +94,7 @@ public class SwerveModule {
             m_turnVelErrorLogEntry.append(getTurnVelErrorRps());
             m_turnFeedforwardOutLogEntry.append(getTurnFeedforwardOutputV());
             m_turnPidOutLogEntry.append(getTurnPidOutputV());
+            m_turnApplidedVoltageLogEntry.append(getTurnAppliedVoltage());
             m_isHomedLogEntry.append(getIsHomed());
         }
     }
@@ -115,17 +119,11 @@ public class SwerveModule {
     }
 
     /**
-     * Configure the profiled PID turning controller for either homing (using the absolute encoder)
-     * or auto/teleop (using the relative encoder).
-     *
-     * @param configureForHoming true to configure for homing, false to configure for auto/teleop
+     * Reset the profiled PID turning controller which will zero out the integral term and
+     * update the setpoint to the current angle of the absolute encoder.
      */
-    public void configureTurningController(boolean configureForHoming) {
-        if (configureForHoming) {
-            m_turnController.disableContinuousInput();
-        } else {
-            m_turnController.enableContinuousInput(-Math.PI, Math.PI);
-        }
+    public void resetTurningController() {
+        m_turnController.reset(getTurnAbsEncAngleRad());
     }
 
     /**
@@ -136,7 +134,6 @@ public class SwerveModule {
      * coeeficients are used for the feed-forward. If the controller is already at the goal, the
      * motor outputs are set to 0, the module state is updated to reflect the completion of the
      * homing, and the relative encoder is reset.
-     * 
     */
     public void setHomedModuleState() {
         m_turnPidOutput = 
@@ -195,6 +192,15 @@ public class SwerveModule {
 
         m_turnMotor.setVoltage(m_turnPidOutput + m_turnFeedForwardOutput);
         m_driveMotor.setVoltage(m_drivePidOutput + m_driveFeedForwardOutput);
+    }
+
+    /**
+     * Sets the commanded voltage of the turn motor.
+     * 
+     * @param voltage the voltage the motor is set to.
+     */
+    public void setTurnVoltage(double voltage) {
+        m_turnMotor.setVoltage(voltage);
     }
 
     /**
@@ -263,6 +269,16 @@ public class SwerveModule {
     }
 
     /**
+     * Get the turning relative encoder velocity which already has the raw encoder counts to
+     * radians conversion baked in.
+     *
+     * @return the velocity in radians per second
+     */
+    private double getTurnRelEncVelocityRps() {
+        return m_turnRelEnc.getRate();
+    }
+
+    /**
      * Get the drive encoder velocity which already has the encoder RPM native units to
      * meters-per-second conversion baked in.
      *
@@ -324,6 +340,15 @@ public class SwerveModule {
      */
     private double getTurnPidOutputV() {
         return m_turnPidOutput;
+    }
+
+    /**
+     * The derived voltage from the duty cycle and the voltage fed into the motor controller.
+     * 
+     * @return the derived voltage
+     */
+    private double getTurnAppliedVoltage() {
+        return m_turnMotor.get() * m_turnMotor.getBusVoltage();
     }
     
 
@@ -391,6 +416,7 @@ public class SwerveModule {
         m_driveEnc.setVelocityConversionFactor(m_baseConversion / 60.0);
         m_turnRelEnc.setDistancePerPulse(2.0 * Math.PI / Constants.Drivetrain.turnEncPpr);
         m_turnController.setTolerance(Units.degreesToRadians(Calibrations.MAX_TURN_ERROR_DEG));
+        m_turnController.enableContinuousInput(-Math.PI, Math.PI);
 
         m_driveEnc.setPosition(0);
 
@@ -407,6 +433,8 @@ public class SwerveModule {
                 new DoubleLogEntry(m_log, m_label + " Turn Abs Enc (rad)");
             m_turnRelEncLogEntry = 
                 new DoubleLogEntry(m_log, m_label + " Turn Rel Enc (rad)");
+            m_turnRelEncVelocityLogEntry = 
+                new DoubleLogEntry(m_log, m_label + " Turn Rel Enc Velocity (rad/s)");
             m_driveEncLogEntry = 
                 new DoubleLogEntry(m_log, m_label + " Drive Rel Enc (mps)");
             m_turnPosSetpointLogEntry = 
@@ -421,12 +449,15 @@ public class SwerveModule {
                 new DoubleLogEntry(m_log, m_label + " Turn Feed-forward Output (V)");
             m_turnPidOutLogEntry = 
                 new DoubleLogEntry(m_log, m_label + " Turn PID Output (V)");
+            m_turnApplidedVoltageLogEntry = 
+                new DoubleLogEntry(m_log, m_label + " Turn Applied Voltage (V)");
             m_isHomedLogEntry =
                 new BooleanLogEntry(m_log, m_label + " Is Homed");
         } else {
             m_log = null;
             m_turnAbsEncLogEntry = null;
             m_turnRelEncLogEntry = null;
+            m_turnRelEncVelocityLogEntry = null;
             m_driveEncLogEntry = null;
             m_turnPosSetpointLogEntry = null;
             m_turnVelSetpointLogEntry = null;
@@ -434,6 +465,7 @@ public class SwerveModule {
             m_turnVelErrorLogEntry = null;
             m_turnFeedforwardOutLogEntry = null;
             m_turnPidOutLogEntry = null;
+            m_turnApplidedVoltageLogEntry = null;
             m_isHomedLogEntry = null;
         }
     }
