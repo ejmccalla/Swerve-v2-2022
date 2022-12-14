@@ -12,21 +12,19 @@ import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Calibrations;
 import frc.robot.Constants;
+import frc.robot.lib.ADIS16470;
 import frc.robot.lib.SwerveDriveSignal;
 import frc.robot.lib.SwerveModule;
-import frc.robot.lib.ADIS16470;
 
 /**
- * Implements the swerve drivetrain using REV/SparkMax, swerve MK4 modules, CTRE mag encoders, and
- * an ADIS16470 IMU.
+ * Implements the swerve drivetrain using REV/SparkMax, swerve MK4 modules, CTRE mag encoders, and an ADIS16470 IMU.
  */
 public class Drivetrain extends SubsystemBase {
 
     /**
      * The states of the drivetrain.
      *
-     * <p>Commands are responsible for setting the state of the drivetrain and are defined as
-     * follows:
+     * <p>Commands are responsible for setting the state of the drivetrain and are defined as follows:
      *
      * <p><b>Idle</b> - There are no commands currently using the subsystem.
      *
@@ -86,9 +84,9 @@ public class Drivetrain extends SubsystemBase {
     private StringLogEntry m_stateLogEntry;
 
 
-    //-------------------------------------------------------------------------------------------//
-    /*                                      PUBLIC METHODS                                       */
-    //-------------------------------------------------------------------------------------------//
+    //--------------------------------------------------------------------------------------------------------------------//
+    /*                                                   PUBLIC METHODS                                                   */
+    //--------------------------------------------------------------------------------------------------------------------//
 
 
     /**
@@ -114,7 +112,7 @@ public class Drivetrain extends SubsystemBase {
 
     /**
      * Sets the commanded voltage of the turn motors.
-     * 
+     *
      * @param voltage the voltage the motors is set to.
      */
     public void setModulesTurnVoltage(double voltage) {
@@ -124,8 +122,8 @@ public class Drivetrain extends SubsystemBase {
     }
 
     /**
-     * Reset the profiled PID turning controllers which will zero out the integral term and
-     * update the setpoint to the current angle of the absolute encoder.
+     * Reset the profiled PID turning controllers which will zero out the integral term and update the setpoint to the
+     * current angle of the absolute encoder.
      */
     public void resetModulesTurningController() {
         for (int i = 0; i < Constants.Drivetrain.numModules; i++) {
@@ -140,20 +138,16 @@ public class Drivetrain extends SubsystemBase {
     public void setDesiredModulesState(SwerveDriveSignal driveSignal) {
         if (m_isFieldOriented) {
             m_chassisSpeeds = 
-                ChassisSpeeds.fromFieldRelativeSpeeds(driveSignal.getxSpeed(),
-                                                      driveSignal.getySpeed(),
-                                                      driveSignal.getRotationalSpeed(),
-                                                      m_imuYawAngleRot2D);
+                ChassisSpeeds.fromFieldRelativeSpeeds(driveSignal.getxSpeed(), driveSignal.getySpeed(),
+                                                      driveSignal.getRotationalSpeed(), m_imuYawAngleRot2D);
         } else {
-            m_chassisSpeeds = new ChassisSpeeds(driveSignal.getxSpeed(),
-                                                driveSignal.getySpeed(),
-                                                driveSignal.getRotationalSpeed());
+            m_chassisSpeeds =
+                new ChassisSpeeds(driveSignal.getxSpeed(), driveSignal.getySpeed(), driveSignal.getRotationalSpeed());
         }
         m_desiredModulesState = m_kinematics.toSwerveModuleStates(m_chassisSpeeds);
 
         // TODO: Calibrate the velocity constraint.
-        SwerveDriveKinematics.desaturateWheelSpeeds(m_desiredModulesState, 
-                                                    Calibrations.MAX_DRIVE_VELOCITY_MPS);
+        SwerveDriveKinematics.desaturateWheelSpeeds(m_desiredModulesState, Calibrations.MAX_DRIVE_VELOCITY_MPS);
         for (int i = 0; i < Constants.Drivetrain.numModules; i++) {
             m_modules[i].setDesiredState(m_desiredModulesState[i]);
         }
@@ -240,9 +234,9 @@ public class Drivetrain extends SubsystemBase {
     }
 
 
-    //-------------------------------------------------------------------------------------------//
-    /*                                     PRIVATE METHODS                                       */
-    //-------------------------------------------------------------------------------------------//
+    //--------------------------------------------------------------------------------------------------------------------//
+    /*                                                  PRIVATE METHODS                                                   */
+    //--------------------------------------------------------------------------------------------------------------------//
 
 
     /**
@@ -263,9 +257,9 @@ public class Drivetrain extends SubsystemBase {
         }
     }
 
-    //-------------------------------------------------------------------------------------------//
-    /*                            CONSTRUCTOR AND PERIODIC METHODS                               */
-    //-------------------------------------------------------------------------------------------//
+    //--------------------------------------------------------------------------------------------------------------------//
+    /*                                         CONSTRUCTOR AND PERIODIC METHODS                                           */
+    //--------------------------------------------------------------------------------------------------------------------//
 
 
     /** 
@@ -315,8 +309,7 @@ public class Drivetrain extends SubsystemBase {
 
 
     /**
-     * This method is called periodically by the command scheduler and is run before any of the
-     * commands are serviced.
+     * This method is called periodically by the command scheduler and is run before any of the commands are serviced.
      */
     @Override 
     public void periodic() {

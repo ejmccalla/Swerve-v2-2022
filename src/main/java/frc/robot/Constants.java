@@ -4,15 +4,13 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.util.Units;
 
 /**
- * The Constants class constains all of the port mappings and other numerical values which don't
- * require calibration.
+ * The Constants class constains all of the port mappings and other numerical values which don't require calibration.
  */
 public final class Constants {
 
 
     /**
-     * The DriverStation constants are port numbers used by the joysticks/button/controllers on the
-     * drivers station.
+     * The DriverStation constants are port numbers used by the joysticks/button/controllers on the drivers station.
      */
     public static final class Driver {
         public static final double MAX_DRIVE_VELOCITY_MPS = 3.0;
@@ -20,8 +18,7 @@ public final class Constants {
     }
 
     /**
-     * The DriverStation constants are port numbers used by the joysticks/button/controllers on the
-     * drivers station.
+     * The DriverStation constants are port numbers used by the joysticks/button/controllers on the drivers station.
      */
     public static final class DriverStation {
         public static final int LEFT_JOYSTICK = 0;
@@ -30,8 +27,8 @@ public final class Constants {
     }
 
     /**
-     * The Hardware constants are port numbers and/or CAN ID's of the robot hardware which don't
-     * belong to an explicit sub-system.
+     * The Hardware constants are port numbers and/or CAN ID's of the robot hardware which don't belong to an explicit
+     * sub-system.
      */
     public static final class Hardware {
         public static final int PDP_ID = 40;
@@ -39,8 +36,8 @@ public final class Constants {
     }
 
     /**
-     * The Intake constants are port numbers and/or CAN ID's of the robot hardware which don't
-     * belong to an explicit sub-system.
+     * The Intake constants are port numbers and/or CAN ID's of the robot hardware which don't belong to an explicit
+     * sub-system.
      */
     public static final class Intake {
         /** Switch to enable logging telemetry to disk. */
@@ -56,8 +53,8 @@ public final class Constants {
     }
 
     /**
-     * The Drivetrain constants are port numbers and/or CAN ID's of the robot hardware which don't
-     * belong to an explicit sub-system.
+     * The Drivetrain constants are port numbers and/or CAN ID's of the robot hardware which don't belong to an explicit
+     * sub-system.
      *
      * <p>The positions of the modules are relative to the robot center.
      */

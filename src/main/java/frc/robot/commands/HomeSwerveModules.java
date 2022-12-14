@@ -53,8 +53,7 @@ public class HomeSwerveModules extends CommandBase {
     }
 
     /**
-     * Update the drivetrain state when all of the modules have successfully completed the homing
-     * sequence.
+     * Update the drivetrain state when all of the modules have successfully completed the homing sequence.
      * 
      * <p>This command should be scheduled as non-interruptable.
      */

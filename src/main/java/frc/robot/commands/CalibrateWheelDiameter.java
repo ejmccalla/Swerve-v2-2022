@@ -24,8 +24,7 @@ public class CalibrateWheelDiameter extends CommandBase {
     }
 
     /**
-     * Set the swerve modules to coast mode (since the robot will manually be pushed) and reset
-     * the drive encoders to 0.
+     * Set the swerve modules to coast mode (since the robot will manually be pushed) and reset the drive encoders to 0.
      */
     @Override
     public void initialize() {
@@ -35,8 +34,8 @@ public class CalibrateWheelDiameter extends CommandBase {
     }
 
     /**
-     * Set the swerve modules motor ouptuts to 0 volts.
-     * The drive encoder positions are output to the smart dashboard for recording.
+     * Set the swerve modules motor ouptuts to 0 volts. The drive encoder positions are output to the smart dashboard for 
+     * recording.
      */
     @Override
     public void execute() {

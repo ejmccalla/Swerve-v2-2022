@@ -19,8 +19,8 @@ public final class Calibrations {
     /** 
      * The average wheel diameter (best: calibrate with encoders, ok: use tape measure).
      *
-     * <p>To measure the average wheel diameter using the encoders requires a straight wall and
-     * chunk of carpet. The procedure goes as follows:
+     * <p>To measure the average wheel diameter using the encoders requires a straight wall and chunk of carpet. The
+     * procedure goes as follows:
      *
      * <p>1. Place the carpet up against the wall.
      *
@@ -30,8 +30,8 @@ public final class Calibrations {
      *
      * <p>4. Zero the encoders.
      *
-     * <p>5. Manually push the robot forward (keep the robot in contact with the wall the whole
-     * time) until the encoders indicate exactly 10 complete rotations.
+     * <p>5. Manually push the robot forward (keep the robot in contact with the wall the whole time) until the encoders
+     * indicate exactly 10 complete rotations.
      *
      * <p>6. Mark the front of the robot on the wall.
      *
@@ -53,9 +53,8 @@ public final class Calibrations {
      * 
      * <p>2. The track width is the average of the two measurements from the first step.
      *
-     * <p>Any changes to the track width from step 2 likely indicates there is mechanical damage
-     * to the module. Also, if the difference between the left/right wheel pairs is large, this
-     * indicates an "out-of-square" frame.
+     * <p>Any changes to the track width from step 2 likely indicates there is mechanical damage to the module. Also, if the
+     * difference between the left/right wheel pairs is large, this indicates an "out-of-square" frame.
      *
      * @implNote This should be done before each event minimum
      */
@@ -71,9 +70,8 @@ public final class Calibrations {
      * 
      * <p>2. The wheel base is the average of the two measurements from the first step.
      *
-     * <p>Any changes to the wheel base from step 2 likely indicates there is mechanical damage
-     * to the module. Also, if the difference between the front/rear wheel pairs is large, this
-     * indicates an "out-of-square" frame.
+     * <p>Any changes to the wheel base from step 2 likely indicates there is mechanical damage to the module. Also, if the
+     * difference between the front/rear wheel pairs is large, this indicates an "out-of-square" frame.
      *
      * @implNote This should be done before each event minimum
      */
@@ -81,11 +79,11 @@ public final class Calibrations {
 
 
     /**
-     * The absolute encoder angle for homing the wheel (best: calibrate with encoders, ok: use a
-     * straight edge to align the wheels).
+     * The absolute encoder angle for homing the wheel (best: calibrate with encoders, ok: use a straight edge to align the
+     * wheels).
      *
-     * <p>To measure the absolute encoder home angle using the encoders requires a straight wall
-     * and chunk of carpet. The procedure goes as follows:
+     * <p>To measure the absolute encoder home angle using the encoders requires a straight wall and chunk of carpet. The
+     * procedure goes as follows:
      * 
      * <p>1. Place the carpet up against the wall.
      *
@@ -93,14 +91,12 @@ public final class Calibrations {
      *
      * <p>3. Start recording the absolute encoder values.
      *
-     * <p>4. Manually push the robot forward (keep the robot in contact with the wall the whole
-     * time) for ~10 feet.
+     * <p>4. Manually push the robot forward (keep the robot in contact with the wall the whole time) for ~10 feet.
      *
      * <p>5. Stop recording the absolute encoder values.
      *
-     * <p>6. The homing angle is the average of the recorded values. Depending on the initial
-     * alignment of the wheels, the beginning portion of the recorded values should be removed
-     * from the averaging.
+     * <p>6. The homing angle is the average of the recorded values. Depending on the initial alignment of the wheels, the
+     * beginning portion of the recorded values should be removed from the averaging.
      *
      * <p>The ordering of the values below are : front left, front right, rear left, rear right.
      *
@@ -112,8 +108,8 @@ public final class Calibrations {
     /**
      * The maximum turning controller error allowed to be considered on-target.
      *
-     * <p>This value should be tuned such that it is tight enough to properly home the wheels, but
-     * not too tight where the homing routine oscillates and never reaches the goal.
+     * <p>This value should be tuned such that it is tight enough to properly home the wheels, but not too tight where the
+     * homing routine oscillates and never reaches the goal.
      *
      * @implNote This should be tuned before each event minimum
      */
@@ -121,11 +117,10 @@ public final class Calibrations {
 
 
     /**
-     * The maximum angular velocity used for constraining trajectory profile of the turning
-     * controller.
+     * The maximum angular velocity used for constraining trajectory profile of the turning controller.
      *
-     * <p>Measuring the maximum angular velocity of the turning motor requires a chunk of carpet.
-     * The procedure goes as follows:
+     * <p>Measuring the maximum angular velocity of the turning motor requires a chunk of carpet.The procedure goes as
+     * follows:
      * 
      * <p>1. Place robot on the carpet.
      *
@@ -135,14 +130,13 @@ public final class Calibrations {
      *
      * <p>4. Stop recording.
      *
-     * <p>5. The maximum angular velocity is the average of the recorded values. Depending on the
-     * acceleration, the beginning portion of the recorded values should be removed from the
-     * averaging.
+     * <p>5. The maximum angular velocity is the average of the recorded values. Depending on the acceleration, the
+     * beginning portion of the recorded values should be removed from the averaging.
      * 
      * <p>6. Repeat steps 2-5 using a full negative voltage.
      * 
-     * <p>7. Take 90% of the minimum from step 5 (positive/negative voltage commands) and use this
-     * as the maximum angular velocity. 
+     * <p>7. Take 90% of the minimum from step 5 (positive/negative voltage commands) and use this as the maximum angular
+     * velocity. 
      *
      * <p>The ordering of the values below are : front left, front right, rear left, rear right.
      *
@@ -153,11 +147,10 @@ public final class Calibrations {
 
 
     /**
-     * The maximum angular acceleration used for constraining trajectory profile of the turning
-     * controller.
+     * The maximum angular acceleration used for constraining trajectory profile of the turning controller.
      *
-     * <p>Measuring the maximum angular acceleration of the turning motor requires a chunk of
-     * carpet. The procedure goes as follows:
+     * <p>Measuring the maximum angular acceleration of the turning motor requires a chunk of carpet. The procedure goes as
+     * follows:
      * 
      * <p>1. Place robot on the carpet.
      *
@@ -167,17 +160,16 @@ public final class Calibrations {
      *
      * <p>4. Stop recording.
      *
-     * <p>5. The accelerations are the delta velocity measurements. Only keep the accleration
-     * values starting with the initial max voltage and ending with the motor reaching cruise
-     * velocity. Take the average of these remaining data.
+     * <p>5. The accelerations are the delta velocity measurements. Only keep the accleration values starting with the
+     * initial max voltage and ending with the motor reaching cruise velocity. Take the average of these remaining data.
      * 
-     * <p>6. Since the acceleration data are noisy and short, repeat steps 3-5 several times. The
-     * maximum angular acceleration is the average of all the step 5's. 
+     * <p>6. Since the acceleration data are noisy and short, repeat steps 3-5 several times. The maximum angular
+     * acceleration is the average of all the step 5's. 
      * 
      * <p>7. Repeat steps 2-6 using a full negative voltage.
      * 
-     * <p>8. Take 90% of the minimum from step 6 (positive/negative voltage commands) and use this
-     * as the maximum angular acceleration. 
+     * <p>8. Take 90% of the minimum from step 6 (positive/negative voltage commands) and use this as the maximum angular
+     * acceleration. 
      *
      * <p>The ordering of the values below are : front left, front right, rear left, rear right.
      *
@@ -210,8 +202,7 @@ public final class Calibrations {
     /**
      * The static gain of the feedforward turning controller.
      *
-     * <p>Use the WPILib system identification tool to collect data and fit it to the
-     * permanent-magnet DC motor model.
+     * <p>Use the WPILib system identification tool to collect data and fit it to the permanent-magnet DC motor model.
      *
      * <p>The ordering of the values below are : front left, front right, rear left, rear right.
      *
@@ -224,8 +215,7 @@ public final class Calibrations {
     /**
      * The velocity gain of the feedforward turning controller.
      *
-     * <p>Use the WPILib system identification tool to collect data and fit it to the
-     * permanent-magnet DC motor model.
+     * <p>Use the WPILib system identification tool to collect data and fit it to the permanent-magnet DC motor model.
      *
      * <p>The ordering of the values below are : front left, front right, rear left, rear right.
      *
@@ -238,8 +228,7 @@ public final class Calibrations {
     /**
      * The acceration gain of the feedforward turning controller.
      *
-     * <p>Use the WPILib system identification tool to collect data and fit it to the
-     * permanent-magnet DC motor model.
+     * <p>Use the WPILib system identification tool to collect data and fit it to the permanent-magnet DC motor model.
      *
      * <p>The ordering of the values below are : front left, front right, rear left, rear right.
      *
@@ -272,8 +261,7 @@ public final class Calibrations {
     /**
      * The static gain of the feedforward driving controller.
      *
-     * <p>Use the WPILib system identification tool to collect data and fit it to the
-     * permanent-magnet DC motor model.
+     * <p>Use the WPILib system identification tool to collect data and fit it to the permanent-magnet DC motor model.
      *
      * <p>The ordering of the values below are : front left, front right, rear left, rear right.
      *
@@ -286,8 +274,7 @@ public final class Calibrations {
     /**
      * The velocity gain of the feedforward driving controller.
      *
-     * <p>Use the WPILib system identification tool to collect data and fit it to the
-     * permanent-magnet DC motor model.
+     * <p>Use the WPILib system identification tool to collect data and fit it to the permanent-magnet DC motor model.
      *
      * <p>The ordering of the values below are : front left, front right, rear left, rear right.
      *
@@ -300,8 +287,7 @@ public final class Calibrations {
     /**
      * The acceration gain of the feedforward driving controller.
      *
-     * <p>Use the WPILib system identification tool to collect data and fit it to the
-     * permanent-magnet DC motor model.
+     * <p>Use the WPILib system identification tool to collect data and fit it to the permanent-magnet DC motor model.
      *
      * <p>The ordering of the values below are : front left, front right, rear left, rear right.
      *
@@ -314,8 +300,7 @@ public final class Calibrations {
     /**
      * The maximum drive velocity used to constrain the swerve drive signal.
      * 
-     * <p>This is used as a driving speed limit. As the driver gets better this value can be
-     * increased towards maximum.
+     * <p>This is used as a driving speed limit. As the driver gets better this value can be increased towards maximum.
      *
      * @implNote This should be set before each event minimum
      */

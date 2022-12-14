@@ -9,8 +9,7 @@ import frc.robot.subsystems.Drivetrain;
 import frc.robot.subsystems.Intake;
 
 /**
- * The RobotContainer class contains all of the subsystems, commands, and defines how the users
- * interface with the robot.
+ * The RobotContainer class contains all of the subsystems, commands, and defines how the users interface with the robot.
  */
 public class RobotContainer {
 
@@ -22,28 +21,27 @@ public class RobotContainer {
     public final Intake m_intake;
 
 
-    //-------------------------------------------------------------------------------------------//
-    /*                                      PUBLIC METHODS                                       */
-    //-------------------------------------------------------------------------------------------//
+    //--------------------------------------------------------------------------------------------------------------------//
+    /*                                                   PUBLIC METHODS                                                   */
+    //--------------------------------------------------------------------------------------------------------------------//
 
 
-    //-------------------------------------------------------------------------------------------//
-    /*                                     PRIVATE METHODS                                       */
-    //-------------------------------------------------------------------------------------------//
+    //--------------------------------------------------------------------------------------------------------------------//
+    /*                                                  PRIVATE METHODS                                                   */
+    //--------------------------------------------------------------------------------------------------------------------//
 
 
-    //-------------------------------------------------------------------------------------------//
-    /*                            CONSTRUCTOR AND PERIODIC METHODS                               */
-    //-------------------------------------------------------------------------------------------//
+    //--------------------------------------------------------------------------------------------------------------------//
+    /*                                         CONSTRUCTOR AND PERIODIC METHODS                                           */
+    //--------------------------------------------------------------------------------------------------------------------//
 
 
     /**
      * Constructor for the robot container.
      * 
-     * <p>The default command for the drivetrain is the {@link frc.robot.commands.Drive} commamnd.
-     * The default behavior of the drive command is to be field-oriented. The right joystick button
-     * is used to change this behavior. While this button is pressed, the drive commands will be
-     * robot-oriented.
+     * <p>The default command for the drivetrain is the {@link frc.robot.commands.Drive} commamnd. The default behavior of
+     * the drive command is to be field-oriented. The right joystick button is used to change this behavior. While this
+     * button is pressed, the drive commands will be robot-oriented.
      */
     public RobotContainer() {
         // m_leftJoystick = new Joystick(Constants.DriverStation.LEFT_JOYSTICK);

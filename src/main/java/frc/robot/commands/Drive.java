@@ -12,9 +12,8 @@ import frc.robot.subsystems.Drivetrain.StateType;
 /**
  * Implements a command to drive the robot using driver inputs.
  * 
- * <p>This command is intended to be the default subsystem command. As such, there is no condition
- * that ends the command and there's nothing to do when the command is finished (even if by being
- * interrupted).
+ * <p>This command is intended to be the default subsystem command. As such, there is no condition that ends the command and
+ * there's nothing to do when the command is finished (even if by being interrupted).
  */
 public class Drive extends CommandBase {
 
@@ -60,9 +59,8 @@ public class Drive extends CommandBase {
     /**
      * Compose the swerve drive signal.
      * 
-     * <p>Each of the driver inputs (X and Y translational velocity and rotational velocity) are
-     * rate limited and have an appied deadband. These values should be set based on driver
-     * feedback.
+     * <p>Each of the driver inputs (X and Y translational velocity and rotational velocity) are rate limited and have an
+     * appied deadband. These values should be set based on driver feedback.
      */
     @Override
     public void execute() {
@@ -73,8 +71,7 @@ public class Drive extends CommandBase {
         m_speedZ = MathUtil.applyDeadband(m_rateLimiterZ.calculate(m_leftJoystick.getZ()), 0.05);
         m_speedZ *= Constants.Driver.MAX_ROTATION_VELOCITY_RPS;
 
-        // TODO: Review the need for the PID which holds the rotational angle when no rotation is
-        // commanded
+        // TODO: Review the need for the PID which holds the rotational angle when no rotation is commanded.
         //m_drivetrain.setDesiredModulesState(new SwerveDriveSignal(m_speedX, m_speedY, m_speedZ));
         m_drivetrain.setIdleModules();
 

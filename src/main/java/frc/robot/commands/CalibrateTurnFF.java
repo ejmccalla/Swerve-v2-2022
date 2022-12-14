@@ -11,7 +11,7 @@ public class CalibrateTurnFF extends CommandBase {
 
     private Drivetrain m_drivetrain;
 
-    /** Devide by 50 because there are 50 loops per 1 second with a 20ms control loop */
+    /** Devide by 50 because there are 50 loops per 1 second with a 20ms control loop. */
     private static final double m_rampRateVpl = 0.25 / 50;
     private static final double m_maxRampVoltage = 4.0;
     private static final double m_stepVoltage = 4.0;
