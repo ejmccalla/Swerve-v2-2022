@@ -16,20 +16,20 @@ import frc.robot.Calibrations;
 import frc.robot.Constants;
 
 /**
- * Implements the intake with a NEO 550 and 3:1 reduction.
+ * Implements the tower with a NEO 550 and 5:1 reduction.
  */
-public class Intake extends SubsystemBase {
+public class Tower extends SubsystemBase {
 
     /**
-     * The states of the intake.
+     * The states of the tower.
      * 
      * <p>Commands are responsible for setting the state of the tower and are defined as follows:
      *
-     * <p><b>Idle</b> - There are no commands currently using the subsystem.
+     * <p><b>Idle</b> - there are no commands currently using the subsystem.
      *
-     * <p><b>Retracted</b> - the intake is retracted the motor is spun down.
+     * <p><b>LoadCargo</b> - the tower pushing cargo into the shoooter.
      *
-     * <p><b>Extended</b> - The intake is extended and the motor is spun up.
+     * <p><b>UnloadCargo</b> - the tower pulling cargo out of the shoooter.
      */
     public enum StateType {
         Idle { 
@@ -38,16 +38,16 @@ public class Intake extends SubsystemBase {
                 return "Idle";
             }
         },
-        Retracted { 
+        LoadCargo { 
             @Override
             public String toString() {
-                return "Retracted";
+                return "Load Cargo";
             }
         },
-        Extended {
+        UnloadCargo {
             @Override
             public String toString() {
-                return "Extended";
+                return "Unload Cargo";
             }
         },
     }
@@ -55,10 +55,9 @@ public class Intake extends SubsystemBase {
     private final CANSparkMax m_motor;
     private SparkMaxPIDController m_pidController;
     private RelativeEncoder m_encoder;
-    private final Solenoid m_solenoid;
     private final DataLog m_log;
     private StateType m_currentState;
-    private DoubleLogEntry m_rollerLinearVelocityMps;
+    private DoubleLogEntry m_wheelsLinearVelocityMps;
     private StringLogEntry m_stateLogEntry;
 
 
@@ -68,23 +67,29 @@ public class Intake extends SubsystemBase {
 
 
     /**
-     * Toggle the intake between extended and retracted.
-     * 
-     * <p>It is expected that this will be used as an instant command to extend and retract the intake. 
+     * Move the cargo into the shooter.
      */
-    public void toggleIntake() {
-        if (m_solenoid.get()) {
-            m_currentState = StateType.Retracted;
-            m_solenoid.set(false);
-            m_pidController.setReference(Calibrations.Intake.retractedTargetRpm, 
-                                         CANSparkMax.ControlType.kVelocity);
-        } else {
-            m_solenoid.set(true);
-            m_currentState = StateType.Extended;
-            m_pidController.setReference(Calibrations.Intake.extendedTargetRpm,
-                                         CANSparkMax.ControlType.kVelocity);
-        }
+    public void loadCargo() {
+        m_currentState = StateType.LoadCargo;
+        m_pidController.setReference(Calibrations.Tower.loadTargetRpm, CANSparkMax.ControlType.kVelocity);
     }
+
+    /**
+     * Pull the cargo out of the shooter.
+     */
+    public void unloadCargo() {
+        m_currentState = StateType.UnloadCargo;
+        m_pidController.setReference(-Calibrations.Tower.unloadTargetRpm, CANSparkMax.ControlType.kVelocity);
+    }
+
+    /**
+     * Turn off the motor output
+     */
+    public void turnOffTower() {
+        m_currentState = StateType.Idle;
+        m_pidController.setReference(0.0, CANSparkMax.ControlType.kDutyCycle);
+    }
+
 
     //--------------------------------------------------------------------------------------------------------------------//
     /*                                                  PRIVATE METHODS                                                   */
@@ -95,8 +100,8 @@ public class Intake extends SubsystemBase {
      * Log the telemetry data to disk using the WPILib logger.
      */
     private void logTelemetry() {
-        if (Constants.Intake.ENABLE_LOGGING) {
-            m_rollerLinearVelocityMps.append(m_encoder.getVelocity());
+        if (Constants.Tower.ENABLE_LOGGING) {
+            m_wheelsLinearVelocityMps.append(m_encoder.getVelocity());
             m_stateLogEntry.append(m_currentState.toString());
         }
     }
@@ -108,48 +113,41 @@ public class Intake extends SubsystemBase {
 
 
     /** 
-     * Constructor for the intake.
+     * Constructor for the tower.
      *
      * <p>The NEO 550 motor is fragile when it comes to higher current draws which are common when a motor is stalled. For
-     * an intake, stalling the motor can be a fairly common occurence. This is especially true when working through the
-     * early iterations of a design. With this in mind, it is important to set safe current limits and fix any "lack of
-     * power" issues with gearing, a bigger motor, or adding another motor.
-     *
-     * <p>The intake is actuated using a single-acting solenoid. This meaning that it is plumbed to default (power off
-     * state) to the intake being up.
+     * the tower, stalling the motor is possible unless synced up with the shooter. With this in mind, it is important to
+     * set safe current limits and fix any "lack of power" issues with gearing, a bigger motor, or adding another motor.
      *
      * @see <a href="https://www.revrobotics.com/neo-550-brushless-motor-locked-rotor-testing/">NEO 550 Locked Rotor testing</a>
      */
-    public Intake(int motorId, int solenoidId) {
+    public Tower(int motorId) {
         m_motor = new CANSparkMax(motorId, MotorType.kBrushless);
         m_motor.restoreFactoryDefaults();
         m_motor.setSmartCurrentLimit(20, 40);
         m_motor.setIdleMode(IdleMode.kCoast);
 
         m_pidController = m_motor.getPIDController();
-        m_pidController.setP(Calibrations.Intake.P);
+        m_pidController.setP(Calibrations.Tower.P);
         m_pidController.setI(0);
-        m_pidController.setD(Calibrations.Intake.D);
+        m_pidController.setD(Calibrations.Tower.D);
         m_pidController.setIZone(0);
-        m_pidController.setFF(Calibrations.Intake.FF);
+        m_pidController.setFF(Calibrations.Tower.FF);
         m_pidController.setOutputRange(-1, 1);
 
         m_encoder = m_motor.getEncoder();
-        m_encoder.setVelocityConversionFactor(Constants.Intake.ROLLER_DIAMETER_FT * Math.PI
-            / Constants.Intake.GEAR_RATIO / 60.0);
-
-        m_solenoid = new Solenoid(Constants.Hardware.REV_PH_ID, PneumaticsModuleType.REVPH, solenoidId);
-        m_solenoid.set(false);
+        m_encoder.setVelocityConversionFactor(Constants.Tower.WHEEL_DIAMETER_FT * Math.PI
+            / Constants.Tower.GEAR_RATIO / 60.0);
 
         m_currentState = StateType.Idle;
 
-        if (Constants.Intake.ENABLE_LOGGING) {
+        if (Constants.Tower.ENABLE_LOGGING) {
             m_log = DataLogManager.getLog();
-            m_rollerLinearVelocityMps = new DoubleLogEntry(m_log, "Intake Roller Linear Velocity (fps)");
-            m_stateLogEntry = new StringLogEntry(m_log, "Intake State");
+            m_wheelsLinearVelocityMps = new DoubleLogEntry(m_log, "Tower Wheels Linear Velocity (fps)");
+            m_stateLogEntry = new StringLogEntry(m_log, "Tower State");
         } else {
             m_log = null;
-            m_rollerLinearVelocityMps = null;
+            m_wheelsLinearVelocityMps = null;
             m_stateLogEntry = null;
         }
     }
@@ -161,11 +159,6 @@ public class Intake extends SubsystemBase {
     @Override 
     public void periodic() {
         logTelemetry();
-        if (m_currentState == StateType.Extended) {
-            m_pidController.setReference(Calibrations.Intake.extendedTargetRpm, CANSparkMax.ControlType.kVelocity);
-        } else {
-            m_pidController.setReference(Calibrations.Intake.retractedTargetRpm, CANSparkMax.ControlType.kVelocity);
-        }
     }
 
 }

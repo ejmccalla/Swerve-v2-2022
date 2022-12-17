@@ -10,14 +10,17 @@ import edu.wpi.first.wpilibj.Compressor;
 import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.PneumaticsModuleType;
+import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.livewindow.LiveWindow;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
-import frc.robot.commands.CalibrateTurnFF;
-import frc.robot.commands.CalibrateWheelDiameter;
+// import frc.robot.commands.CalibrateTurnFF;
+// import frc.robot.commands.CalibrateWheelDiameter;
+import frc.robot.Constants.Hardware;
 import frc.robot.commands.HomeSwerveModules;
+
 
 /**
  * This is the top-level class where the {@link edu.wpi.first.wpilibj.TimedRobot} states are defined.
@@ -43,13 +46,18 @@ import frc.robot.commands.HomeSwerveModules;
  */
 public class Robot extends TimedRobot {
 
+    private static final double LOOP_TIME_TO_HOURS = 0.02 / 3600.0;
     private static final boolean m_enableLogger = true;
     private CommandScheduler m_commandScheduler;
+    private PowerDistribution m_pdh;
     private RobotContainer m_robotContainer;
     private Compressor m_compressor;
     private double m_pressurePsi;
     private double m_imuYawAngleDeg;
     private double m_imuTempDegC;
+    private double m_totalCurrentA;
+    private double m_voltageV;
+    private double m_totalPowerWHs;
     private CANStatus m_canStatus;
     private DoubleLogEntry m_pressureLogEntry;
     private DoubleLogEntry m_imuYawAngleLogEntry;
@@ -63,6 +71,9 @@ public class Robot extends TimedRobot {
     private IntegerLogEntry m_roborioCanTxErrCountLogEntry;
     private IntegerLogEntry m_roborioCanTxFullCountLogEntry;
     private BooleanLogEntry m_roborioStaleDsDataLogEntry;
+    private DoubleLogEntry m_pdhTotalCurrentDoubleLogEntry;
+    private DoubleLogEntry m_pdhInputVoltageDoubleLogEntry;
+    private DoubleLogEntry m_pdhTotalPowerDoubleLogEntry;
 
     /**
      * This method is called only a single time when the robot is first powered on. This is where initialization code
@@ -85,12 +96,16 @@ public class Robot extends TimedRobot {
     @Override
     public void robotInit() {
         LiveWindow.disableAllTelemetry();
+        m_pdh = new PowerDistribution(Hardware.REV_PDH_ID, PowerDistribution.ModuleType.kRev);
         m_robotContainer = new RobotContainer();
-        m_compressor = new Compressor(Constants.Hardware.PCM_ID, PneumaticsModuleType.REVPH);
+        m_compressor = new Compressor(Constants.Hardware.REV_PH_ID, PneumaticsModuleType.REVPH);
         m_compressor.disable();
         m_pressurePsi = m_compressor.getPressure();
         m_imuYawAngleDeg = m_robotContainer.m_drivetrain.getImuYawAngleDeg();
         m_imuTempDegC = m_robotContainer.m_drivetrain.getImuTempDegC();
+        m_totalCurrentA = m_pdh.getTotalCurrent();
+        m_voltageV = m_pdh.getVoltage();
+        m_totalPowerWHs = m_totalCurrentA * m_voltageV * 0.02;
         m_canStatus = RobotController.getCANStatus();
         SmartDashboard.putNumber("Pressure (PSI)", m_pressurePsi);
         SmartDashboard.putNumber("IMU Yaw Angle (deg)", m_imuYawAngleDeg);        
@@ -121,6 +136,12 @@ public class Robot extends TimedRobot {
             m_roborioStaleDsDataLogEntry = new BooleanLogEntry(log, "RoboRio Stale DS Data Count");
             m_roborioStaleDsDataLogEntry.append(DriverStation.isNewControlData());
             m_modeLogEntry = new StringLogEntry(log, "FMS Mode");
+            m_pdhTotalCurrentDoubleLogEntry = new DoubleLogEntry(log, "PDH Total Current (A)");
+            m_pdhTotalCurrentDoubleLogEntry.append(m_totalCurrentA);
+            m_pdhInputVoltageDoubleLogEntry = new DoubleLogEntry(log, "PDH Input Voltage (V)");
+            m_pdhInputVoltageDoubleLogEntry.append(m_voltageV);
+            m_pdhTotalPowerDoubleLogEntry = new DoubleLogEntry(log, "PDH Total Power (W)");
+            m_pdhTotalPowerDoubleLogEntry.append(m_totalPowerWHs);
         }
         m_commandScheduler = CommandScheduler.getInstance();
         m_commandScheduler.setPeriod(10);
@@ -179,7 +200,7 @@ public class Robot extends TimedRobot {
     @Override
     public void teleopInit() {
         m_commandScheduler.enable();
-        //m_commandScheduler.schedule(false, new HomeSwerveModules(m_robotContainer.m_drivetrain));
+        m_commandScheduler.schedule(false, new HomeSwerveModules(m_robotContainer.m_drivetrain));
         if (m_enableLogger) {
             m_modeLogEntry.append("Teleop");
         }        
@@ -240,15 +261,22 @@ public class Robot extends TimedRobot {
         m_pressurePsi = m_compressor.getPressure();
         m_imuYawAngleDeg = m_robotContainer.m_drivetrain.getImuYawAngleDeg();
         m_imuTempDegC = m_robotContainer.m_drivetrain.getImuTempDegC();
+        m_totalCurrentA = m_pdh.getTotalCurrent();
+        m_voltageV = m_pdh.getVoltage();
+        m_totalPowerWHs += m_totalCurrentA * m_voltageV * LOOP_TIME_TO_HOURS;
         if (m_enableLogger) {
             m_pressureLogEntry.append(m_pressurePsi);
             m_imuYawAngleLogEntry.append(m_imuYawAngleDeg);
             m_imuTempLogEntry.append(m_imuTempDegC);
             m_roborioBrownedOutLogEntry.append(RobotController.isBrownedOut());
             m_roborioStaleDsDataLogEntry.append(DriverStation.isNewControlData());
+            m_pdhTotalCurrentDoubleLogEntry.append(m_totalCurrentA);
+            m_pdhInputVoltageDoubleLogEntry.append(m_voltageV);
+            m_pdhTotalPowerDoubleLogEntry.append(m_totalPowerWHs);
         }
         SmartDashboard.putNumber("Pressure (PSI)", m_pressurePsi);
         SmartDashboard.putNumber("IMU Yaw Angle (deg)", m_imuYawAngleDeg);
+        SmartDashboard.putNumber("Total Current (A)", m_totalCurrentA);
     }
 
 
@@ -286,7 +314,7 @@ public class Robot extends TimedRobot {
 
     @Override
     public void testPeriodic() {
-        m_robotContainer.m_drivetrain.setModulesTurnVoltage(4.0);
+        // m_robotContainer.m_drivetrain.setModulesTurnVoltage(4.0);
     }
 
     @Override

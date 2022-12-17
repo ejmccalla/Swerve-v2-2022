@@ -6,7 +6,7 @@ package frc.robot;
 public final class Calibrations {
 
     /**
-     * Calibration specific to the intake subsystem.
+     * Calibration specific to the Intake subsystem.
      */
     public static final class Intake {
         public static final double P = 6e-5;
@@ -14,6 +14,17 @@ public final class Calibrations {
         public static final double FF = 0.000015;
         public static final double extendedTargetRpm = 0.9 * 11000.0;
         public static final double retractedTargetRpm = 0.0;
+    }
+
+    /**
+     * Calibration specific to the Tower subsystem.
+     */
+    public static final class Tower {
+        public static final double P = 6e-5;
+        public static final double D = 0.0;
+        public static final double FF = 0.000015;
+        public static final double loadTargetRpm = 0.5 * 11000.0;
+        public static final double unloadTargetRpm = 0.5 * 11000.0;
     }
 
     /** 
@@ -113,7 +124,7 @@ public final class Calibrations {
      *
      * @implNote This should be tuned before each event minimum
      */
-    public static final double MAX_TURN_ERROR_DEG = 1.0;
+    public static final double MAX_TURN_ERROR_DEG = 2.0;
 
 
     /**
@@ -186,7 +197,7 @@ public final class Calibrations {
      *
      * @implNote This should be tuned before each event minimum
      */
-    public static final double TURN_P_GAIN = 8.0;
+    public static final double TURN_P_GAIN = 4.0;
 
 
     /**
@@ -245,7 +256,7 @@ public final class Calibrations {
      *
      * @implNote This should be tuned before each event minimum
      */
-    public static final double DRIVE_P_GAIN = 2.5;
+    public static final double DRIVE_P_GAIN = 3.0;
 
 
     /**
@@ -304,6 +315,6 @@ public final class Calibrations {
      *
      * @implNote This should be set before each event minimum
      */
-    public static final double MAX_DRIVE_VELOCITY_MPS = 2.5;
+    public static final double MAX_DRIVE_VELOCITY_MPS = 2.0;
 
 }

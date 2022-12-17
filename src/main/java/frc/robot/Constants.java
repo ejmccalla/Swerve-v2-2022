@@ -31,8 +31,8 @@ public final class Constants {
      * sub-system.
      */
     public static final class Hardware {
-        public static final int PDP_ID = 40;
-        public static final int PCM_ID = 12;
+        public static final int REV_PDH_ID = 1;
+        public static final int REV_PH_ID = 12;
     }
 
     /**
@@ -53,6 +53,21 @@ public final class Constants {
     }
 
     /**
+     * The Tower constants are port numbers and/or CAN ID's of the robot hardware which don't belong to an explicit
+     * sub-system.
+     */
+    public static final class Tower {
+        /** Switch to enable logging telemetry to disk. */
+        public static final boolean ENABLE_LOGGING = false;
+        /** CAN ID of the intake motor. */
+        public static final int MOTOR_ID = 7;
+        /** Gear reduction. */
+        public static final double GEAR_RATIO = 1.0 / 5.0;
+        /** Wheel diameter. */
+        public static final double WHEEL_DIAMETER_FT = 2.0 / 12.0;
+    }
+
+    /**
      * The Drivetrain constants are port numbers and/or CAN ID's of the robot hardware which don't belong to an explicit
      * sub-system.
      *
@@ -60,13 +75,13 @@ public final class Constants {
      */
     public static final class Drivetrain {
         /** Switch to enable logging telemetry to disk. */
-        public static final boolean ENABLE_LOGGING = false;
+        public static final boolean ENABLE_LOGGING = true;
         /** Module order: front left, front right, rear left, rear right. */
         public static final String[] MODULE_LABELS = {"FL", "FR", "RL", "RR"};
         /** Module order: front left, front right, rear left, rear right. */
         public static final int[] TURN_IDS = {9, 30, 11, 18};
         /** Module order: front left, front right, rear left, rear right. */
-        public static final int[] DRIVE_IDS = {8, 1, 10, 19};
+        public static final int[] DRIVE_IDS = {8, 41, 10, 19};
         /** Module order: front left, front right, rear left, rear right. */
         public static final int[] QUAD_A_DIO_CHANNELS = {7, 10, 4, 1};
         /** Module order: front left, front right, rear left, rear right. */
@@ -81,16 +96,16 @@ public final class Constants {
         /** Module order: front left, front right, rear left, rear right. */
         public static final Translation2d[] MODULE_LOCATIONS = {
             new Translation2d(Units.inchesToMeters(Calibrations.WHEEL_BASE_INCH) / 2,
-                              Units.inchesToMeters(Calibrations.TRACK_WIDTH_INCH) / 2),
+                              -Units.inchesToMeters(Calibrations.TRACK_WIDTH_INCH) / 2),
             new Translation2d(Units.inchesToMeters(Calibrations.WHEEL_BASE_INCH) / 2,
                               Units.inchesToMeters(Calibrations.TRACK_WIDTH_INCH) / 2),
             new Translation2d(-Units.inchesToMeters(Calibrations.WHEEL_BASE_INCH) / 2,
-                              Units.inchesToMeters(Calibrations.TRACK_WIDTH_INCH) / 2),
+                              -Units.inchesToMeters(Calibrations.TRACK_WIDTH_INCH) / 2),
             new Translation2d(-Units.inchesToMeters(Calibrations.WHEEL_BASE_INCH) / 2,
-                              -Units.inchesToMeters(Calibrations.TRACK_WIDTH_INCH) / 2)
+                              Units.inchesToMeters(Calibrations.TRACK_WIDTH_INCH) / 2)
         };
 
-        public static final double turnEncPpr = 4096.0;
+        public static final double turnEncPpr = 1024.0;
         public static final int numModules = 4;
 
     }

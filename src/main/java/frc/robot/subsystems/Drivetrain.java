@@ -7,8 +7,8 @@ import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.util.datalog.DataLog;
 import edu.wpi.first.util.datalog.StringLogEntry;
-// import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.DataLogManager;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Calibrations;
 import frc.robot.Constants;
@@ -98,7 +98,6 @@ public class Drivetrain extends SubsystemBase {
         }
     }
 
-
     /**
      * Set the state of the swerve modules to turn to their home position.
      */
@@ -137,9 +136,8 @@ public class Drivetrain extends SubsystemBase {
      */
     public void setDesiredModulesState(SwerveDriveSignal driveSignal) {
         if (m_isFieldOriented) {
-            m_chassisSpeeds = 
-                ChassisSpeeds.fromFieldRelativeSpeeds(driveSignal.getxSpeed(), driveSignal.getySpeed(),
-                                                      driveSignal.getRotationalSpeed(), m_imuYawAngleRot2D);
+            m_chassisSpeeds = ChassisSpeeds.fromFieldRelativeSpeeds(driveSignal.getxSpeed(), driveSignal.getySpeed(), 
+                                                                    driveSignal.getRotationalSpeed(), m_imuYawAngleRot2D);
         } else {
             m_chassisSpeeds =
                 new ChassisSpeeds(driveSignal.getxSpeed(), driveSignal.getySpeed(), driveSignal.getRotationalSpeed());
@@ -155,7 +153,7 @@ public class Drivetrain extends SubsystemBase {
 
     /**
      * Update the state of the drivetrain.
-     * 
+     *
      * <p>The state will be updated by the commands which use the drivetrain subsystem.
      *
      * @param state the drivetrain state
@@ -316,7 +314,7 @@ public class Drivetrain extends SubsystemBase {
         m_imuYawAngleRot2D =  Rotation2d.fromDegrees(m_imu.getAngle());
         for (int i = 0; i < Constants.Drivetrain.numModules; i++) {
             m_currentModulesState[i] = m_modules[i].getCurrentState();
-            //SmartDashboard.putNumber("Abs Encoder "+i, m_currentModulesState[i].angle.getRadians());
+            SmartDashboard.putNumber("Rel Enc Val " + i, m_modules[i].getTurnRelEncAngleRad());
         }
         m_odometry.update(m_imuYawAngleRot2D, m_currentModulesState);
         logModulesTelemetry();

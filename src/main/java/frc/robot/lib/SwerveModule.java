@@ -251,7 +251,7 @@ public class SwerveModule {
      *
      * @return the angle in radians 
      */
-    private double getTurnRelEncAngleRad() {
+    public double getTurnRelEncAngleRad() {
         return m_turnRelEnc.getDistance();
     }
 
