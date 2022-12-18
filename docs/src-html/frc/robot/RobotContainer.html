@@ -1,0 +1,170 @@
+<!DOCTYPE HTML>
+<html lang="en">
+<head>
+<title>Source code</title>
+<link rel="stylesheet" type="text/css" href="../../../stylesheet.css" title="Style">
+</head>
+<body>
+<main role="main">
+<div class="sourceContainer">
+<pre><span class="sourceLineNo">001</span><a id="line.1">package frc.robot;</a>
+<span class="sourceLineNo">002</span><a id="line.2"></a>
+<span class="sourceLineNo">003</span><a id="line.3">import edu.wpi.first.wpilibj.Joystick;</a>
+<span class="sourceLineNo">004</span><a id="line.4">import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;</a>
+<span class="sourceLineNo">005</span><a id="line.5">// import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;</a>
+<span class="sourceLineNo">006</span><a id="line.6">import edu.wpi.first.wpilibj2.command.Command;</a>
+<span class="sourceLineNo">007</span><a id="line.7">import edu.wpi.first.wpilibj2.command.InstantCommand;</a>
+<span class="sourceLineNo">008</span><a id="line.8">import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;</a>
+<span class="sourceLineNo">009</span><a id="line.9">import edu.wpi.first.wpilibj2.command.button.JoystickButton;</a>
+<span class="sourceLineNo">010</span><a id="line.10">import frc.robot.commands.Drive;</a>
+<span class="sourceLineNo">011</span><a id="line.11">import frc.robot.subsystems.Drivetrain;</a>
+<span class="sourceLineNo">012</span><a id="line.12">import frc.robot.subsystems.Intake;</a>
+<span class="sourceLineNo">013</span><a id="line.13">import frc.robot.subsystems.Tower;</a>
+<span class="sourceLineNo">014</span><a id="line.14"></a>
+<span class="sourceLineNo">015</span><a id="line.15">/**</a>
+<span class="sourceLineNo">016</span><a id="line.16"> * The RobotContainer class contains all of the subsystems, commands, and defines how the users interface with the robot.</a>
+<span class="sourceLineNo">017</span><a id="line.17"> */</a>
+<span class="sourceLineNo">018</span><a id="line.18">public class RobotContainer {</a>
+<span class="sourceLineNo">019</span><a id="line.19"></a>
+<span class="sourceLineNo">020</span><a id="line.20">    private final Joystick m_leftJoystick;</a>
+<span class="sourceLineNo">021</span><a id="line.21">    private final Joystick m_rightJoystick;</a>
+<span class="sourceLineNo">022</span><a id="line.22">    private final Joystick m_driverButtonBoard;</a>
+<span class="sourceLineNo">023</span><a id="line.23">    // private final JoystickButton m_leftJoystickButton;</a>
+<span class="sourceLineNo">024</span><a id="line.24">    private final JoystickButton m_rightJoystickButton;</a>
+<span class="sourceLineNo">025</span><a id="line.25">    private final JoystickButton m_driverButtonBoardLeft;</a>
+<span class="sourceLineNo">026</span><a id="line.26">    // private final JoystickButton m_driverButtonBoardRight;</a>
+<span class="sourceLineNo">027</span><a id="line.27">    private final ParallelCommandGroup m_startIntakeAndShoot;</a>
+<span class="sourceLineNo">028</span><a id="line.28">    private final ParallelCommandGroup m_stopIntakeAndShoot;</a>
+<span class="sourceLineNo">029</span><a id="line.29">    public final Drivetrain m_drivetrain;</a>
+<span class="sourceLineNo">030</span><a id="line.30">    public final Intake m_intake;</a>
+<span class="sourceLineNo">031</span><a id="line.31">    public final Tower m_tower;</a>
+<span class="sourceLineNo">032</span><a id="line.32">    private final SendableChooser&lt;Command&gt; m_autoChooser = new SendableChooser&lt;&gt;();</a>
+<span class="sourceLineNo">033</span><a id="line.33"></a>
+<span class="sourceLineNo">034</span><a id="line.34"></a>
+<span class="sourceLineNo">035</span><a id="line.35">    //--------------------------------------------------------------------------------------------------------------------//</a>
+<span class="sourceLineNo">036</span><a id="line.36">    /*                                                   PUBLIC METHODS                                                   */</a>
+<span class="sourceLineNo">037</span><a id="line.37">    //--------------------------------------------------------------------------------------------------------------------//</a>
+<span class="sourceLineNo">038</span><a id="line.38"></a>
+<span class="sourceLineNo">039</span><a id="line.39"></a>
+<span class="sourceLineNo">040</span><a id="line.40">    /**</a>
+<span class="sourceLineNo">041</span><a id="line.41">     * Use this to pass the autonomous command to the main {@link Robot} class.</a>
+<span class="sourceLineNo">042</span><a id="line.42">     *</a>
+<span class="sourceLineNo">043</span><a id="line.43">     * @return the command to run in autonomous</a>
+<span class="sourceLineNo">044</span><a id="line.44">     */</a>
+<span class="sourceLineNo">045</span><a id="line.45">    public Command getAutonomousCommand() {</a>
+<span class="sourceLineNo">046</span><a id="line.46">        return m_autoChooser.getSelected();</a>
+<span class="sourceLineNo">047</span><a id="line.47">    }</a>
+<span class="sourceLineNo">048</span><a id="line.48"></a>
+<span class="sourceLineNo">049</span><a id="line.49">    //--------------------------------------------------------------------------------------------------------------------//</a>
+<span class="sourceLineNo">050</span><a id="line.50">    /*                                                  PRIVATE METHODS                                                   */</a>
+<span class="sourceLineNo">051</span><a id="line.51">    //--------------------------------------------------------------------------------------------------------------------//</a>
+<span class="sourceLineNo">052</span><a id="line.52"></a>
+<span class="sourceLineNo">053</span><a id="line.53"></a>
+<span class="sourceLineNo">054</span><a id="line.54">    //--------------------------------------------------------------------------------------------------------------------//</a>
+<span class="sourceLineNo">055</span><a id="line.55">    /*                                         CONSTRUCTOR AND PERIODIC METHODS                                           */</a>
+<span class="sourceLineNo">056</span><a id="line.56">    //--------------------------------------------------------------------------------------------------------------------//</a>
+<span class="sourceLineNo">057</span><a id="line.57"></a>
+<span class="sourceLineNo">058</span><a id="line.58"></a>
+<span class="sourceLineNo">059</span><a id="line.59">    /**</a>
+<span class="sourceLineNo">060</span><a id="line.60">     * Constructor for the robot container.</a>
+<span class="sourceLineNo">061</span><a id="line.61">     * </a>
+<span class="sourceLineNo">062</span><a id="line.62">     * &lt;p&gt;The default command for the drivetrain is the {@link frc.robot.commands.Drive} commamnd. The default behavior of</a>
+<span class="sourceLineNo">063</span><a id="line.63">     * the drive command is to be field-oriented. The right joystick button is used to change this behavior. While this</a>
+<span class="sourceLineNo">064</span><a id="line.64">     * button is pressed, the drive commands will be robot-oriented.</a>
+<span class="sourceLineNo">065</span><a id="line.65">     */</a>
+<span class="sourceLineNo">066</span><a id="line.66">    public RobotContainer() {</a>
+<span class="sourceLineNo">067</span><a id="line.67">        m_leftJoystick = new Joystick(Constants.DriverStation.LEFT_JOYSTICK);</a>
+<span class="sourceLineNo">068</span><a id="line.68">        m_rightJoystick = new Joystick(Constants.DriverStation.RIGHT_JOYSTICK);</a>
+<span class="sourceLineNo">069</span><a id="line.69">        m_driverButtonBoard = new Joystick(Constants.DriverStation.DRIVER_BUTTON_BOARD);</a>
+<span class="sourceLineNo">070</span><a id="line.70">        // m_leftJoystickButton = new JoystickButton(m_leftJoystick, 1);</a>
+<span class="sourceLineNo">071</span><a id="line.71">        m_rightJoystickButton = new JoystickButton(m_rightJoystick, 1);</a>
+<span class="sourceLineNo">072</span><a id="line.72">        m_driverButtonBoardLeft = new JoystickButton(m_driverButtonBoard, 2);</a>
+<span class="sourceLineNo">073</span><a id="line.73">        // m_driverButtonBoardRight = new JoystickButton(m_driverButtonBoard, 3);</a>
+<span class="sourceLineNo">074</span><a id="line.74"></a>
+<span class="sourceLineNo">075</span><a id="line.75">        m_drivetrain = new Drivetrain();</a>
+<span class="sourceLineNo">076</span><a id="line.76">        m_intake = new Intake();</a>
+<span class="sourceLineNo">077</span><a id="line.77">        m_tower = new Tower();</a>
+<span class="sourceLineNo">078</span><a id="line.78"></a>
+<span class="sourceLineNo">079</span><a id="line.79">        m_drivetrain.setDefaultCommand(new Drive(m_leftJoystick, m_rightJoystick, m_drivetrain));</a>
+<span class="sourceLineNo">080</span><a id="line.80"></a>
+<span class="sourceLineNo">081</span><a id="line.81">        m_startIntakeAndShoot = new ParallelCommandGroup(new InstantCommand(() -&gt; m_tower.loadCargo(), m_tower),</a>
+<span class="sourceLineNo">082</span><a id="line.82">                                                         new InstantCommand(() -&gt; m_intake.extendIntake(), m_intake));</a>
+<span class="sourceLineNo">083</span><a id="line.83">        m_stopIntakeAndShoot = new ParallelCommandGroup(new InstantCommand(() -&gt; m_tower.turnOffTower(), m_tower),</a>
+<span class="sourceLineNo">084</span><a id="line.84">                                                        new InstantCommand(() -&gt; m_intake.retractIntake(), m_intake));</a>
+<span class="sourceLineNo">085</span><a id="line.85"></a>
+<span class="sourceLineNo">086</span><a id="line.86">        m_rightJoystickButton.whenPressed(new InstantCommand(() -&gt; m_drivetrain.toggleFieldOriented(), m_drivetrain));</a>
+<span class="sourceLineNo">087</span><a id="line.87">        m_driverButtonBoardLeft.whenPressed(m_startIntakeAndShoot);</a>
+<span class="sourceLineNo">088</span><a id="line.88">        m_driverButtonBoardLeft.whenReleased(m_stopIntakeAndShoot);</a>
+<span class="sourceLineNo">089</span><a id="line.89"></a>
+<span class="sourceLineNo">090</span><a id="line.90">        m_autoChooser.setDefaultOption("Auto 1", new InstantCommand(() -&gt; m_tower.loadCargo(), m_tower));</a>
+<span class="sourceLineNo">091</span><a id="line.91">        m_autoChooser.addOption("Auto 2", new InstantCommand(() -&gt; m_tower.unloadCargo(), m_tower));</a>
+<span class="sourceLineNo">092</span><a id="line.92"></a>
+<span class="sourceLineNo">093</span><a id="line.93"></a>
+<span class="sourceLineNo">094</span><a id="line.94">    }</a>
+<span class="sourceLineNo">095</span><a id="line.95"></a>
+<span class="sourceLineNo">096</span><a id="line.96">}</a>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</pre>
+</div>
+</main>
+</body>
+</html>

@@ -1,0 +1,1101 @@
+<!DOCTYPE HTML>
+<html lang="en">
+<head>
+<title>Source code</title>
+<link rel="stylesheet" type="text/css" href="../../../../stylesheet.css" title="Style">
+</head>
+<body>
+<main role="main">
+<div class="sourceContainer">
+<pre><span class="sourceLineNo">001</span><a id="line.1">package frc.robot.lib;</a>
+<span class="sourceLineNo">002</span><a id="line.2"></a>
+<span class="sourceLineNo">003</span><a id="line.3">import edu.wpi.first.hal.FRCNetComm.tResourceType;</a>
+<span class="sourceLineNo">004</span><a id="line.4">import edu.wpi.first.hal.HAL;</a>
+<span class="sourceLineNo">005</span><a id="line.5">import edu.wpi.first.hal.SimDevice;</a>
+<span class="sourceLineNo">006</span><a id="line.6">import edu.wpi.first.hal.SimDouble;</a>
+<span class="sourceLineNo">007</span><a id="line.7">import edu.wpi.first.networktables.NTSendable;</a>
+<span class="sourceLineNo">008</span><a id="line.8">import edu.wpi.first.networktables.NTSendableBuilder;</a>
+<span class="sourceLineNo">009</span><a id="line.9">import java.nio.ByteBuffer;</a>
+<span class="sourceLineNo">010</span><a id="line.10">import java.nio.ByteOrder;</a>
+<span class="sourceLineNo">011</span><a id="line.11"></a>
+<span class="sourceLineNo">012</span><a id="line.12">import edu.wpi.first.wpilibj.SPI;</a>
+<span class="sourceLineNo">013</span><a id="line.13">import edu.wpi.first.wpilibj.DigitalInput;</a>
+<span class="sourceLineNo">014</span><a id="line.14">import edu.wpi.first.wpilibj.DigitalOutput;</a>
+<span class="sourceLineNo">015</span><a id="line.15">import edu.wpi.first.wpilibj.Timer;</a>
+<span class="sourceLineNo">016</span><a id="line.16">import edu.wpi.first.wpilibj.DriverStation;</a>
+<span class="sourceLineNo">017</span><a id="line.17"></a>
+<span class="sourceLineNo">018</span><a id="line.18">@SuppressWarnings({</a>
+<span class="sourceLineNo">019</span><a id="line.19">    "unused",</a>
+<span class="sourceLineNo">020</span><a id="line.20">    "PMD.RedundantFieldInitializer",</a>
+<span class="sourceLineNo">021</span><a id="line.21">    "PMD.ImmutableField",</a>
+<span class="sourceLineNo">022</span><a id="line.22">    "PMD.SingularField",</a>
+<span class="sourceLineNo">023</span><a id="line.23">    "PMD.CollapsibleIfStatements",</a>
+<span class="sourceLineNo">024</span><a id="line.24">    "PMD.MissingOverride",</a>
+<span class="sourceLineNo">025</span><a id="line.25">    "PMD.EmptyIfStmt",</a>
+<span class="sourceLineNo">026</span><a id="line.26">    "PMD.EmptyStatementNotInLoop"</a>
+<span class="sourceLineNo">027</span><a id="line.27">  })</a>
+<span class="sourceLineNo">028</span><a id="line.28">  </a>
+<span class="sourceLineNo">029</span><a id="line.29">public class ADIS16470 implements AutoCloseable, NTSendable {</a>
+<span class="sourceLineNo">030</span><a id="line.30">  /* ADIS16470 Register Map Declaration */</a>
+<span class="sourceLineNo">031</span><a id="line.31">  private static final int FLASH_CNT = 0x00; // Flash memory write count</a>
+<span class="sourceLineNo">032</span><a id="line.32">  private static final int DIAG_STAT = 0x02; // Diagnostic and operational status</a>
+<span class="sourceLineNo">033</span><a id="line.33">  private static final int X_GYRO_LOW = 0x04; // X-axis gyroscope output, lower word</a>
+<span class="sourceLineNo">034</span><a id="line.34">  private static final int X_GYRO_OUT = 0x06; // X-axis gyroscope output, upper word</a>
+<span class="sourceLineNo">035</span><a id="line.35">  private static final int Y_GYRO_LOW = 0x08; // Y-axis gyroscope output, lower word</a>
+<span class="sourceLineNo">036</span><a id="line.36">  private static final int Y_GYRO_OUT = 0x0A; // Y-axis gyroscope output, upper word</a>
+<span class="sourceLineNo">037</span><a id="line.37">  private static final int Z_GYRO_LOW = 0x0C; // Z-axis gyroscope output, lower word</a>
+<span class="sourceLineNo">038</span><a id="line.38">  private static final int Z_GYRO_OUT = 0x0E; // Z-axis gyroscope output, upper word</a>
+<span class="sourceLineNo">039</span><a id="line.39">  private static final int X_ACCL_LOW = 0x10; // X-axis accelerometer output, lower word</a>
+<span class="sourceLineNo">040</span><a id="line.40">  private static final int X_ACCL_OUT = 0x12; // X-axis accelerometer output, upper word</a>
+<span class="sourceLineNo">041</span><a id="line.41">  private static final int Y_ACCL_LOW = 0x14; // Y-axis accelerometer output, lower word</a>
+<span class="sourceLineNo">042</span><a id="line.42">  private static final int Y_ACCL_OUT = 0x16; // Y-axis accelerometer output, upper word</a>
+<span class="sourceLineNo">043</span><a id="line.43">  private static final int Z_ACCL_LOW = 0x18; // Z-axis accelerometer output, lower word</a>
+<span class="sourceLineNo">044</span><a id="line.44">  private static final int Z_ACCL_OUT = 0x1A; // Z-axis accelerometer output, upper word</a>
+<span class="sourceLineNo">045</span><a id="line.45">  private static final int TEMP_OUT = 0x1C; // Temperature output (internal, not calibrated)</a>
+<span class="sourceLineNo">046</span><a id="line.46">  private static final int TIME_STAMP = 0x1E; // PPS mode time stamp</a>
+<span class="sourceLineNo">047</span><a id="line.47">  private static final int X_DELTANG_LOW = 0x24; // X-axis delta angle output, lower word</a>
+<span class="sourceLineNo">048</span><a id="line.48">  private static final int X_DELTANG_OUT = 0x26; // X-axis delta angle output, upper word</a>
+<span class="sourceLineNo">049</span><a id="line.49">  private static final int Y_DELTANG_LOW = 0x28; // Y-axis delta angle output, lower word</a>
+<span class="sourceLineNo">050</span><a id="line.50">  private static final int Y_DELTANG_OUT = 0x2A; // Y-axis delta angle output, upper word</a>
+<span class="sourceLineNo">051</span><a id="line.51">  private static final int Z_DELTANG_LOW = 0x2C; // Z-axis delta angle output, lower word</a>
+<span class="sourceLineNo">052</span><a id="line.52">  private static final int Z_DELTANG_OUT = 0x2E; // Z-axis delta angle output, upper word</a>
+<span class="sourceLineNo">053</span><a id="line.53">  private static final int X_DELTVEL_LOW = 0x30; // X-axis delta velocity output, lower word</a>
+<span class="sourceLineNo">054</span><a id="line.54">  private static final int X_DELTVEL_OUT = 0x32; // X-axis delta velocity output, upper word</a>
+<span class="sourceLineNo">055</span><a id="line.55">  private static final int Y_DELTVEL_LOW = 0x34; // Y-axis delta velocity output, lower word</a>
+<span class="sourceLineNo">056</span><a id="line.56">  private static final int Y_DELTVEL_OUT = 0x36; // Y-axis delta velocity output, upper word</a>
+<span class="sourceLineNo">057</span><a id="line.57">  private static final int Z_DELTVEL_LOW = 0x38; // Z-axis delta velocity output, lower word</a>
+<span class="sourceLineNo">058</span><a id="line.58">  private static final int Z_DELTVEL_OUT = 0x3A; // Z-axis delta velocity output, upper word</a>
+<span class="sourceLineNo">059</span><a id="line.59">  private static final int XG_BIAS_LOW =</a>
+<span class="sourceLineNo">060</span><a id="line.60">      0x40; // X-axis gyroscope bias offset correction, lower word</a>
+<span class="sourceLineNo">061</span><a id="line.61">  private static final int XG_BIAS_HIGH =</a>
+<span class="sourceLineNo">062</span><a id="line.62">      0x42; // X-axis gyroscope bias offset correction, upper word</a>
+<span class="sourceLineNo">063</span><a id="line.63">  private static final int YG_BIAS_LOW =</a>
+<span class="sourceLineNo">064</span><a id="line.64">      0x44; // Y-axis gyroscope bias offset correction, lower word</a>
+<span class="sourceLineNo">065</span><a id="line.65">  private static final int YG_BIAS_HIGH =</a>
+<span class="sourceLineNo">066</span><a id="line.66">      0x46; // Y-axis gyroscope bias offset correction, upper word</a>
+<span class="sourceLineNo">067</span><a id="line.67">  private static final int ZG_BIAS_LOW =</a>
+<span class="sourceLineNo">068</span><a id="line.68">      0x48; // Z-axis gyroscope bias offset correction, lower word</a>
+<span class="sourceLineNo">069</span><a id="line.69">  private static final int ZG_BIAS_HIGH =</a>
+<span class="sourceLineNo">070</span><a id="line.70">      0x4A; // Z-axis gyroscope bias offset correction, upper word</a>
+<span class="sourceLineNo">071</span><a id="line.71">  private static final int XA_BIAS_LOW =</a>
+<span class="sourceLineNo">072</span><a id="line.72">      0x4C; // X-axis accelerometer bias offset correction, lower word</a>
+<span class="sourceLineNo">073</span><a id="line.73">  private static final int XA_BIAS_HIGH =</a>
+<span class="sourceLineNo">074</span><a id="line.74">      0x4E; // X-axis accelerometer bias offset correction, upper word</a>
+<span class="sourceLineNo">075</span><a id="line.75">  private static final int YA_BIAS_LOW =</a>
+<span class="sourceLineNo">076</span><a id="line.76">      0x50; // Y-axis accelerometer bias offset correction, lower word</a>
+<span class="sourceLineNo">077</span><a id="line.77">  private static final int YA_BIAS_HIGH =</a>
+<span class="sourceLineNo">078</span><a id="line.78">      0x52; // Y-axis accelerometer bias offset correction, upper word</a>
+<span class="sourceLineNo">079</span><a id="line.79">  private static final int ZA_BIAS_LOW =</a>
+<span class="sourceLineNo">080</span><a id="line.80">      0x54; // Z-axis accelerometer bias offset correction, lower word</a>
+<span class="sourceLineNo">081</span><a id="line.81">  private static final int ZA_BIAS_HIGH =</a>
+<span class="sourceLineNo">082</span><a id="line.82">      0x56; // Z-axis accelerometer bias offset correction, upper word</a>
+<span class="sourceLineNo">083</span><a id="line.83">  private static final int FILT_CTRL = 0x5C; // Filter control</a>
+<span class="sourceLineNo">084</span><a id="line.84">  private static final int MSC_CTRL = 0x60; // Miscellaneous control</a>
+<span class="sourceLineNo">085</span><a id="line.85">  private static final int UP_SCALE = 0x62; // Clock scale factor, PPS mode</a>
+<span class="sourceLineNo">086</span><a id="line.86">  private static final int DEC_RATE = 0x64; // Decimation rate control (output data rate)</a>
+<span class="sourceLineNo">087</span><a id="line.87">  private static final int NULL_CNFG = 0x66; // Auto-null configuration control</a>
+<span class="sourceLineNo">088</span><a id="line.88">  private static final int GLOB_CMD = 0x68; // Global commands</a>
+<span class="sourceLineNo">089</span><a id="line.89">  private static final int FIRM_REV = 0x6C; // Firmware revision</a>
+<span class="sourceLineNo">090</span><a id="line.90">  private static final int FIRM_DM = 0x6E; // Firmware revision date, month and day</a>
+<span class="sourceLineNo">091</span><a id="line.91">  private static final int FIRM_Y = 0x70; // Firmware revision date, year</a>
+<span class="sourceLineNo">092</span><a id="line.92">  private static final int PROD_ID = 0x72; // Product identification</a>
+<span class="sourceLineNo">093</span><a id="line.93">  private static final int SERIAL_NUM = 0x74; // Serial number (relative to assembly lot)</a>
+<span class="sourceLineNo">094</span><a id="line.94">  private static final int USER_SCR1 = 0x76; // User scratch register 1</a>
+<span class="sourceLineNo">095</span><a id="line.95">  private static final int USER_SCR2 = 0x78; // User scratch register 2</a>
+<span class="sourceLineNo">096</span><a id="line.96">  private static final int USER_SCR3 = 0x7A; // User scratch register 3</a>
+<span class="sourceLineNo">097</span><a id="line.97">  private static final int FLSHCNT_LOW = 0x7C; // Flash update count, lower word</a>
+<span class="sourceLineNo">098</span><a id="line.98">  private static final int FLSHCNT_HIGH = 0x7E; // Flash update count, upper word</a>
+<span class="sourceLineNo">099</span><a id="line.99"></a>
+<span class="sourceLineNo">100</span><a id="line.100">  private static final byte[] m_autospi_x_packet = {</a>
+<span class="sourceLineNo">101</span><a id="line.101">    X_DELTANG_OUT,</a>
+<span class="sourceLineNo">102</span><a id="line.102">    FLASH_CNT,</a>
+<span class="sourceLineNo">103</span><a id="line.103">    X_DELTANG_LOW,</a>
+<span class="sourceLineNo">104</span><a id="line.104">    FLASH_CNT,</a>
+<span class="sourceLineNo">105</span><a id="line.105">    X_GYRO_OUT,</a>
+<span class="sourceLineNo">106</span><a id="line.106">    FLASH_CNT,</a>
+<span class="sourceLineNo">107</span><a id="line.107">    Y_GYRO_OUT,</a>
+<span class="sourceLineNo">108</span><a id="line.108">    FLASH_CNT,</a>
+<span class="sourceLineNo">109</span><a id="line.109">    Z_GYRO_OUT,</a>
+<span class="sourceLineNo">110</span><a id="line.110">    FLASH_CNT,</a>
+<span class="sourceLineNo">111</span><a id="line.111">    X_ACCL_OUT,</a>
+<span class="sourceLineNo">112</span><a id="line.112">    FLASH_CNT,</a>
+<span class="sourceLineNo">113</span><a id="line.113">    Y_ACCL_OUT,</a>
+<span class="sourceLineNo">114</span><a id="line.114">    FLASH_CNT,</a>
+<span class="sourceLineNo">115</span><a id="line.115">    Z_ACCL_OUT,</a>
+<span class="sourceLineNo">116</span><a id="line.116">    FLASH_CNT</a>
+<span class="sourceLineNo">117</span><a id="line.117">  };</a>
+<span class="sourceLineNo">118</span><a id="line.118"></a>
+<span class="sourceLineNo">119</span><a id="line.119">  private static final byte[] m_autospi_y_packet = {</a>
+<span class="sourceLineNo">120</span><a id="line.120">    Y_DELTANG_OUT,</a>
+<span class="sourceLineNo">121</span><a id="line.121">    FLASH_CNT,</a>
+<span class="sourceLineNo">122</span><a id="line.122">    Y_DELTANG_LOW,</a>
+<span class="sourceLineNo">123</span><a id="line.123">    FLASH_CNT,</a>
+<span class="sourceLineNo">124</span><a id="line.124">    X_GYRO_OUT,</a>
+<span class="sourceLineNo">125</span><a id="line.125">    FLASH_CNT,</a>
+<span class="sourceLineNo">126</span><a id="line.126">    Y_GYRO_OUT,</a>
+<span class="sourceLineNo">127</span><a id="line.127">    FLASH_CNT,</a>
+<span class="sourceLineNo">128</span><a id="line.128">    Z_GYRO_OUT,</a>
+<span class="sourceLineNo">129</span><a id="line.129">    FLASH_CNT,</a>
+<span class="sourceLineNo">130</span><a id="line.130">    X_ACCL_OUT,</a>
+<span class="sourceLineNo">131</span><a id="line.131">    FLASH_CNT,</a>
+<span class="sourceLineNo">132</span><a id="line.132">    Y_ACCL_OUT,</a>
+<span class="sourceLineNo">133</span><a id="line.133">    FLASH_CNT,</a>
+<span class="sourceLineNo">134</span><a id="line.134">    Z_ACCL_OUT,</a>
+<span class="sourceLineNo">135</span><a id="line.135">    FLASH_CNT</a>
+<span class="sourceLineNo">136</span><a id="line.136">  };</a>
+<span class="sourceLineNo">137</span><a id="line.137"></a>
+<span class="sourceLineNo">138</span><a id="line.138">  private static final byte[] m_autospi_z_packet = {</a>
+<span class="sourceLineNo">139</span><a id="line.139">    Z_DELTANG_OUT,</a>
+<span class="sourceLineNo">140</span><a id="line.140">    FLASH_CNT,</a>
+<span class="sourceLineNo">141</span><a id="line.141">    Z_DELTANG_LOW,</a>
+<span class="sourceLineNo">142</span><a id="line.142">    FLASH_CNT,</a>
+<span class="sourceLineNo">143</span><a id="line.143">    X_GYRO_OUT,</a>
+<span class="sourceLineNo">144</span><a id="line.144">    FLASH_CNT,</a>
+<span class="sourceLineNo">145</span><a id="line.145">    Y_GYRO_OUT,</a>
+<span class="sourceLineNo">146</span><a id="line.146">    FLASH_CNT,</a>
+<span class="sourceLineNo">147</span><a id="line.147">    Z_GYRO_OUT,</a>
+<span class="sourceLineNo">148</span><a id="line.148">    FLASH_CNT,</a>
+<span class="sourceLineNo">149</span><a id="line.149">    X_ACCL_OUT,</a>
+<span class="sourceLineNo">150</span><a id="line.150">    FLASH_CNT,</a>
+<span class="sourceLineNo">151</span><a id="line.151">    Y_ACCL_OUT,</a>
+<span class="sourceLineNo">152</span><a id="line.152">    FLASH_CNT,</a>
+<span class="sourceLineNo">153</span><a id="line.153">    TEMP_OUT,</a>
+<span class="sourceLineNo">154</span><a id="line.154">    // Z_ACCL_OUT, EJM</a>
+<span class="sourceLineNo">155</span><a id="line.155">    FLASH_CNT</a>
+<span class="sourceLineNo">156</span><a id="line.156">};</a>
+<span class="sourceLineNo">157</span><a id="line.157"></a>
+<span class="sourceLineNo">158</span><a id="line.158">  public enum CalibrationTime {</a>
+<span class="sourceLineNo">159</span><a id="line.159">    _32ms(0),</a>
+<span class="sourceLineNo">160</span><a id="line.160">    _64ms(1),</a>
+<span class="sourceLineNo">161</span><a id="line.161">    _128ms(2),</a>
+<span class="sourceLineNo">162</span><a id="line.162">    _256ms(3),</a>
+<span class="sourceLineNo">163</span><a id="line.163">    _512ms(4),</a>
+<span class="sourceLineNo">164</span><a id="line.164">    _1s(5),</a>
+<span class="sourceLineNo">165</span><a id="line.165">    _2s(6),</a>
+<span class="sourceLineNo">166</span><a id="line.166">    _4s(7),</a>
+<span class="sourceLineNo">167</span><a id="line.167">    _8s(8),</a>
+<span class="sourceLineNo">168</span><a id="line.168">    _16s(9),</a>
+<span class="sourceLineNo">169</span><a id="line.169">    _32s(10),</a>
+<span class="sourceLineNo">170</span><a id="line.170">    _64s(11);</a>
+<span class="sourceLineNo">171</span><a id="line.171"></a>
+<span class="sourceLineNo">172</span><a id="line.172">    private int value;</a>
+<span class="sourceLineNo">173</span><a id="line.173"></a>
+<span class="sourceLineNo">174</span><a id="line.174">    private CalibrationTime(int value) {</a>
+<span class="sourceLineNo">175</span><a id="line.175">      this.value = value;</a>
+<span class="sourceLineNo">176</span><a id="line.176">    }</a>
+<span class="sourceLineNo">177</span><a id="line.177">  }</a>
+<span class="sourceLineNo">178</span><a id="line.178"></a>
+<span class="sourceLineNo">179</span><a id="line.179">  public enum IMUAxis {</a>
+<span class="sourceLineNo">180</span><a id="line.180">    kX,</a>
+<span class="sourceLineNo">181</span><a id="line.181">    kY,</a>
+<span class="sourceLineNo">182</span><a id="line.182">    kZ</a>
+<span class="sourceLineNo">183</span><a id="line.183">  }</a>
+<span class="sourceLineNo">184</span><a id="line.184"></a>
+<span class="sourceLineNo">185</span><a id="line.185">  // Static Constants</a>
+<span class="sourceLineNo">186</span><a id="line.186">  private static final double delta_angle_sf = 2160.0 / 2147483648.0; /* 2160 / (2^31) */</a>
+<span class="sourceLineNo">187</span><a id="line.187">  private static final double rad_to_deg = 57.2957795;</a>
+<span class="sourceLineNo">188</span><a id="line.188">  private static final double deg_to_rad = 0.0174532;</a>
+<span class="sourceLineNo">189</span><a id="line.189">  private static final double grav = 9.81;</a>
+<span class="sourceLineNo">190</span><a id="line.190"></a>
+<span class="sourceLineNo">191</span><a id="line.191">  // User-specified yaw axis</a>
+<span class="sourceLineNo">192</span><a id="line.192">  private IMUAxis m_yaw_axis;</a>
+<span class="sourceLineNo">193</span><a id="line.193"></a>
+<span class="sourceLineNo">194</span><a id="line.194">  // Instant raw outputs</a>
+<span class="sourceLineNo">195</span><a id="line.195">  private double m_gyro_rate_x = 0.0;</a>
+<span class="sourceLineNo">196</span><a id="line.196">  private double m_gyro_rate_y = 0.0;</a>
+<span class="sourceLineNo">197</span><a id="line.197">  private double m_gyro_rate_z = 0.0;</a>
+<span class="sourceLineNo">198</span><a id="line.198">  private double m_accel_x = 0.0;</a>
+<span class="sourceLineNo">199</span><a id="line.199">  private double m_accel_y = 0.0;</a>
+<span class="sourceLineNo">200</span><a id="line.200">  private double m_temp = 0.0;</a>
+<span class="sourceLineNo">201</span><a id="line.201">  //private double m_accel_z = 0.0; EJM</a>
+<span class="sourceLineNo">202</span><a id="line.202"></a>
+<span class="sourceLineNo">203</span><a id="line.203">  // Integrated gyro angle</a>
+<span class="sourceLineNo">204</span><a id="line.204">  private double m_integ_angle = 0.0;</a>
+<span class="sourceLineNo">205</span><a id="line.205"></a>
+<span class="sourceLineNo">206</span><a id="line.206">  // Complementary filter variables</a>
+<span class="sourceLineNo">207</span><a id="line.207">  private double m_dt = 0.0;</a>
+<span class="sourceLineNo">208</span><a id="line.208">  private double m_alpha = 0.0;</a>
+<span class="sourceLineNo">209</span><a id="line.209">  private double m_tau = 1.0;</a>
+<span class="sourceLineNo">210</span><a id="line.210">  private double m_compAngleX = 0.0;</a>
+<span class="sourceLineNo">211</span><a id="line.211">  private double m_compAngleY = 0.0;</a>
+<span class="sourceLineNo">212</span><a id="line.212">  private double m_accelAngleX = 0.0;</a>
+<span class="sourceLineNo">213</span><a id="line.213">  private double m_accelAngleY = 0.0;</a>
+<span class="sourceLineNo">214</span><a id="line.214"></a>
+<span class="sourceLineNo">215</span><a id="line.215">  // State variables</a>
+<span class="sourceLineNo">216</span><a id="line.216">  private volatile boolean m_thread_active = false;</a>
+<span class="sourceLineNo">217</span><a id="line.217">  private int m_calibration_time = 0;</a>
+<span class="sourceLineNo">218</span><a id="line.218">  private volatile boolean m_first_run = true;</a>
+<span class="sourceLineNo">219</span><a id="line.219">  private volatile boolean m_thread_idle = false;</a>
+<span class="sourceLineNo">220</span><a id="line.220">  private boolean m_auto_configured = false;</a>
+<span class="sourceLineNo">221</span><a id="line.221">  private double m_scaled_sample_rate = 2500.0;</a>
+<span class="sourceLineNo">222</span><a id="line.222"></a>
+<span class="sourceLineNo">223</span><a id="line.223">  // Resources</a>
+<span class="sourceLineNo">224</span><a id="line.224">  private SPI m_spi;</a>
+<span class="sourceLineNo">225</span><a id="line.225">  private SPI.Port m_spi_port;</a>
+<span class="sourceLineNo">226</span><a id="line.226">  private DigitalInput m_auto_interrupt;</a>
+<span class="sourceLineNo">227</span><a id="line.227">  private DigitalOutput m_reset_out;</a>
+<span class="sourceLineNo">228</span><a id="line.228">  private DigitalInput m_reset_in;</a>
+<span class="sourceLineNo">229</span><a id="line.229">  private DigitalOutput m_status_led;</a>
+<span class="sourceLineNo">230</span><a id="line.230">  private Thread m_acquire_task;</a>
+<span class="sourceLineNo">231</span><a id="line.231"></a>
+<span class="sourceLineNo">232</span><a id="line.232">  private SimDevice m_simDevice;</a>
+<span class="sourceLineNo">233</span><a id="line.233">  private SimDouble m_simGyroAngleX;</a>
+<span class="sourceLineNo">234</span><a id="line.234">  private SimDouble m_simGyroAngleY;</a>
+<span class="sourceLineNo">235</span><a id="line.235">  private SimDouble m_simGyroAngleZ;</a>
+<span class="sourceLineNo">236</span><a id="line.236">  private SimDouble m_simGyroRateX;</a>
+<span class="sourceLineNo">237</span><a id="line.237">  private SimDouble m_simGyroRateY;</a>
+<span class="sourceLineNo">238</span><a id="line.238">  private SimDouble m_simGyroRateZ;</a>
+<span class="sourceLineNo">239</span><a id="line.239">  private SimDouble m_simAccelX;</a>
+<span class="sourceLineNo">240</span><a id="line.240">  private SimDouble m_simAccelY;</a>
+<span class="sourceLineNo">241</span><a id="line.241">  private SimDouble m_simAccelZ;</a>
+<span class="sourceLineNo">242</span><a id="line.242"></a>
+<span class="sourceLineNo">243</span><a id="line.243">  private static class AcquireTask implements Runnable {</a>
+<span class="sourceLineNo">244</span><a id="line.244">    private ADIS16470 imu;</a>
+<span class="sourceLineNo">245</span><a id="line.245"></a>
+<span class="sourceLineNo">246</span><a id="line.246">    public AcquireTask(ADIS16470 imu) {</a>
+<span class="sourceLineNo">247</span><a id="line.247">      this.imu = imu;</a>
+<span class="sourceLineNo">248</span><a id="line.248">    }</a>
+<span class="sourceLineNo">249</span><a id="line.249"></a>
+<span class="sourceLineNo">250</span><a id="line.250">    @Override</a>
+<span class="sourceLineNo">251</span><a id="line.251">    public void run() {</a>
+<span class="sourceLineNo">252</span><a id="line.252">      imu.acquire();</a>
+<span class="sourceLineNo">253</span><a id="line.253">    }</a>
+<span class="sourceLineNo">254</span><a id="line.254">  }</a>
+<span class="sourceLineNo">255</span><a id="line.255"></a>
+<span class="sourceLineNo">256</span><a id="line.256">  public ADIS16470() {</a>
+<span class="sourceLineNo">257</span><a id="line.257">    this(IMUAxis.kZ, SPI.Port.kOnboardCS0, CalibrationTime._4s);</a>
+<span class="sourceLineNo">258</span><a id="line.258">  }</a>
+<span class="sourceLineNo">259</span><a id="line.259"></a>
+<span class="sourceLineNo">260</span><a id="line.260">  /**</a>
+<span class="sourceLineNo">261</span><a id="line.261">   * @param yaw_axis The axis that measures the yaw</a>
+<span class="sourceLineNo">262</span><a id="line.262">   * @param port The SPI Port the gyro is plugged into</a>
+<span class="sourceLineNo">263</span><a id="line.263">   * @param cal_time Calibration time</a>
+<span class="sourceLineNo">264</span><a id="line.264">   */</a>
+<span class="sourceLineNo">265</span><a id="line.265">  public ADIS16470(IMUAxis yaw_axis, SPI.Port port, CalibrationTime cal_time) {</a>
+<span class="sourceLineNo">266</span><a id="line.266">    m_yaw_axis = yaw_axis;</a>
+<span class="sourceLineNo">267</span><a id="line.267">    m_calibration_time = cal_time.value;</a>
+<span class="sourceLineNo">268</span><a id="line.268">    m_spi_port = port;</a>
+<span class="sourceLineNo">269</span><a id="line.269"></a>
+<span class="sourceLineNo">270</span><a id="line.270">    m_acquire_task = new Thread(new AcquireTask(this));</a>
+<span class="sourceLineNo">271</span><a id="line.271"></a>
+<span class="sourceLineNo">272</span><a id="line.272">    m_simDevice = SimDevice.create("Gyro:ADIS16470", port.value);</a>
+<span class="sourceLineNo">273</span><a id="line.273">    if (m_simDevice != null) {</a>
+<span class="sourceLineNo">274</span><a id="line.274">      m_simGyroAngleX = m_simDevice.createDouble("gyro_angle_x", SimDevice.Direction.kInput, 0.0);</a>
+<span class="sourceLineNo">275</span><a id="line.275">      m_simGyroAngleY = m_simDevice.createDouble("gyro_angle_y", SimDevice.Direction.kInput, 0.0);</a>
+<span class="sourceLineNo">276</span><a id="line.276">      m_simGyroAngleZ = m_simDevice.createDouble("gyro_angle_z", SimDevice.Direction.kInput, 0.0);</a>
+<span class="sourceLineNo">277</span><a id="line.277">      m_simGyroRateX = m_simDevice.createDouble("gyro_rate_x", SimDevice.Direction.kInput, 0.0);</a>
+<span class="sourceLineNo">278</span><a id="line.278">      m_simGyroRateY = m_simDevice.createDouble("gyro_rate_y", SimDevice.Direction.kInput, 0.0);</a>
+<span class="sourceLineNo">279</span><a id="line.279">      m_simGyroRateZ = m_simDevice.createDouble("gyro_rate_z", SimDevice.Direction.kInput, 0.0);</a>
+<span class="sourceLineNo">280</span><a id="line.280">      m_simAccelX = m_simDevice.createDouble("accel_x", SimDevice.Direction.kInput, 0.0);</a>
+<span class="sourceLineNo">281</span><a id="line.281">      m_simAccelY = m_simDevice.createDouble("accel_y", SimDevice.Direction.kInput, 0.0);</a>
+<span class="sourceLineNo">282</span><a id="line.282">      m_simAccelZ = m_simDevice.createDouble("accel_z", SimDevice.Direction.kInput, 0.0);</a>
+<span class="sourceLineNo">283</span><a id="line.283">    }</a>
+<span class="sourceLineNo">284</span><a id="line.284"></a>
+<span class="sourceLineNo">285</span><a id="line.285">    if (m_simDevice == null) {</a>
+<span class="sourceLineNo">286</span><a id="line.286">      // Force the IMU reset pin to toggle on startup (doesn't require DS enable)</a>
+<span class="sourceLineNo">287</span><a id="line.287">      // Relies on the RIO hardware by default configuring an output as low</a>
+<span class="sourceLineNo">288</span><a id="line.288">      // and configuring an input as high Z. The 10k pull-up resistor internal to the</a>
+<span class="sourceLineNo">289</span><a id="line.289">      // IMU then forces the reset line high for normal operation.</a>
+<span class="sourceLineNo">290</span><a id="line.290">      m_reset_out = new DigitalOutput(27); // Drive SPI CS2 (IMU RST) low</a>
+<span class="sourceLineNo">291</span><a id="line.291">      Timer.delay(0.01); // Wait 10ms</a>
+<span class="sourceLineNo">292</span><a id="line.292">      m_reset_out.close();</a>
+<span class="sourceLineNo">293</span><a id="line.293">      m_reset_in = new DigitalInput(27); // Set SPI CS2 (IMU RST) high</a>
+<span class="sourceLineNo">294</span><a id="line.294">      Timer.delay(0.25); // Wait 250ms for reset to complete</a>
+<span class="sourceLineNo">295</span><a id="line.295"></a>
+<span class="sourceLineNo">296</span><a id="line.296">      if (!switchToStandardSPI()) {</a>
+<span class="sourceLineNo">297</span><a id="line.297">        return;</a>
+<span class="sourceLineNo">298</span><a id="line.298">      }</a>
+<span class="sourceLineNo">299</span><a id="line.299"></a>
+<span class="sourceLineNo">300</span><a id="line.300">      /** These are the default settings from WPILib 2022.4.1</a>
+<span class="sourceLineNo">301</span><a id="line.301">       * </a>
+<span class="sourceLineNo">302</span><a id="line.302">       * Set data ready polarity (HIGH = Good Data), Disable gSense Compensation and PoP</a>
+<span class="sourceLineNo">303</span><a id="line.303">       * Configure continuous bias calibration time based on user setting</a>
+<span class="sourceLineNo">304</span><a id="line.304">       * Set IMU internal decimation to 4 (output data rate of 2000 SPS / (4 + 1) = 400Hz)</a>
+<span class="sourceLineNo">305</span><a id="line.305">       * Configure IMU internal Bartlett filter</a>
+<span class="sourceLineNo">306</span><a id="line.306">       */</a>
+<span class="sourceLineNo">307</span><a id="line.307">    //   writeRegister(MSC_CTRL, 1);</a>
+<span class="sourceLineNo">308</span><a id="line.308">    //   writeRegister(NULL_CNFG, (m_calibration_time | 0x0700));</a>
+<span class="sourceLineNo">309</span><a id="line.309">    //   writeRegister(DEC_RATE, 4);</a>
+<span class="sourceLineNo">310</span><a id="line.310">    //   writeRegister(FILT_CTRL, 0);</a>
+<span class="sourceLineNo">311</span><a id="line.311"></a>
+<span class="sourceLineNo">312</span><a id="line.312"></a>
+<span class="sourceLineNo">313</span><a id="line.313"></a>
+<span class="sourceLineNo">314</span><a id="line.314">      /**</a>
+<span class="sourceLineNo">315</span><a id="line.315">       * These settings provide the best in-run stability when the CBE is used to</a>
+<span class="sourceLineNo">316</span><a id="line.316">       * recalibrate the gyroscopes and the accelerometers</a>
+<span class="sourceLineNo">317</span><a id="line.317">       */</a>
+<span class="sourceLineNo">318</span><a id="line.318">    //   writeRegister(MSC_CTRL, 0xC1);</a>
+<span class="sourceLineNo">319</span><a id="line.319">    //   writeRegister(NULL_CNFG, ( m_calibration_time | 0x3F00 ) );</a>
+<span class="sourceLineNo">320</span><a id="line.320">    //   writeRegister(DEC_RATE, 4);   // 400 Hz (2.5ms) update rate</a>
+<span class="sourceLineNo">321</span><a id="line.321">    //   writeRegister(FILT_CTRL, 0);  // https://ez.analog.com/mems/w/documents/4080/bartlett-window-filter-response-in-mems-imus</a>
+<span class="sourceLineNo">322</span><a id="line.322"></a>
+<span class="sourceLineNo">323</span><a id="line.323">      // Factory restore</a>
+<span class="sourceLineNo">324</span><a id="line.324">      writeRegister(GLOB_CMD, 0x0002);</a>
+<span class="sourceLineNo">325</span><a id="line.325">      try {Thread.sleep(1000);} catch (InterruptedException e) {}</a>
+<span class="sourceLineNo">326</span><a id="line.326">    //   DriverStation.reportError( "ADIS16470 MSC_CTRL register: " + readRegister(MSC_CTRL), false);</a>
+<span class="sourceLineNo">327</span><a id="line.327">    //   DriverStation.reportError( "ADIS16470 NULL_CNFG register: " + readRegister(NULL_CNFG), false);</a>
+<span class="sourceLineNo">328</span><a id="line.328">    //   DriverStation.reportError( "ADIS16470 DEC_RATE register: " + readRegister(DEC_RATE), false);</a>
+<span class="sourceLineNo">329</span><a id="line.329">    //   DriverStation.reportError( "ADIS16470 FILT_CTRL register: " + readRegister(FILT_CTRL), false);</a>
+<span class="sourceLineNo">330</span><a id="line.330"></a>
+<span class="sourceLineNo">331</span><a id="line.331">      // Run selftest and report results (DIAG_STAT bit 5)</a>
+<span class="sourceLineNo">332</span><a id="line.332">      writeRegister(GLOB_CMD, 0x0004);</a>
+<span class="sourceLineNo">333</span><a id="line.333">      try {Thread.sleep(1000);} catch (InterruptedException e) {}</a>
+<span class="sourceLineNo">334</span><a id="line.334">    //   DriverStation.reportError( "ADIS16470 Selftest DIAG_STAT register: " + readRegister(DIAG_STAT), false);</a>
+<span class="sourceLineNo">335</span><a id="line.335"></a>
+<span class="sourceLineNo">336</span><a id="line.336">      // Notify DS that IMU calibration delay is active</a>
+<span class="sourceLineNo">337</span><a id="line.337">      DriverStation.reportWarning("ADIS16470 starting initial calibration delay.", false);</a>
+<span class="sourceLineNo">338</span><a id="line.338"></a>
+<span class="sourceLineNo">339</span><a id="line.339">      // Wait for samples to accumulate internal to the IMU (110% of user-defined time)</a>
+<span class="sourceLineNo">340</span><a id="line.340">      //try {Thread.sleep((long) (Math.pow(2.0, m_calibration_time) / 2000 * 64 * 1.1 * 1000));} catch (InterruptedException e) {}</a>
+<span class="sourceLineNo">341</span><a id="line.341">      try {Thread.sleep(30000);} catch (InterruptedException e) {}</a>
+<span class="sourceLineNo">342</span><a id="line.342"></a>
+<span class="sourceLineNo">343</span><a id="line.343">      // Write offset calibration command to IMU</a>
+<span class="sourceLineNo">344</span><a id="line.344">      writeRegister(GLOB_CMD, 0x0001);</a>
+<span class="sourceLineNo">345</span><a id="line.345"></a>
+<span class="sourceLineNo">346</span><a id="line.346">      // Configure and enable auto SPI</a>
+<span class="sourceLineNo">347</span><a id="line.347">      if (!switchToAutoSPI()) {</a>
+<span class="sourceLineNo">348</span><a id="line.348">        return;</a>
+<span class="sourceLineNo">349</span><a id="line.349">      }</a>
+<span class="sourceLineNo">350</span><a id="line.350"></a>
+<span class="sourceLineNo">351</span><a id="line.351">      // Let the user know the IMU was initiallized successfully</a>
+<span class="sourceLineNo">352</span><a id="line.352">      DriverStation.reportWarning("ADIS16470 IMU Successfully Initialized!", false);</a>
+<span class="sourceLineNo">353</span><a id="line.353"></a>
+<span class="sourceLineNo">354</span><a id="line.354">      // Drive "Ready" LED low</a>
+<span class="sourceLineNo">355</span><a id="line.355">      m_status_led = new DigitalOutput(28); // Set SPI CS3 (IMU Ready LED) low</a>
+<span class="sourceLineNo">356</span><a id="line.356">    }</a>
+<span class="sourceLineNo">357</span><a id="line.357"></a>
+<span class="sourceLineNo">358</span><a id="line.358">    // Report usage and post data to DS</a>
+<span class="sourceLineNo">359</span><a id="line.359">    HAL.report(tResourceType.kResourceType_ADIS16470, 0);</a>
+<span class="sourceLineNo">360</span><a id="line.360">  }</a>
+<span class="sourceLineNo">361</span><a id="line.361"></a>
+<span class="sourceLineNo">362</span><a id="line.362">  /**</a>
+<span class="sourceLineNo">363</span><a id="line.363">   * @param buf</a>
+<span class="sourceLineNo">364</span><a id="line.364">   * @return</a>
+<span class="sourceLineNo">365</span><a id="line.365">   */</a>
+<span class="sourceLineNo">366</span><a id="line.366">  private static int toUShort(ByteBuffer buf) {</a>
+<span class="sourceLineNo">367</span><a id="line.367">    return (buf.getShort(0)) &amp; 0xFFFF;</a>
+<span class="sourceLineNo">368</span><a id="line.368">  }</a>
+<span class="sourceLineNo">369</span><a id="line.369"></a>
+<span class="sourceLineNo">370</span><a id="line.370">  /**</a>
+<span class="sourceLineNo">371</span><a id="line.371">   * @param sint</a>
+<span class="sourceLineNo">372</span><a id="line.372">   * @return</a>
+<span class="sourceLineNo">373</span><a id="line.373">   */</a>
+<span class="sourceLineNo">374</span><a id="line.374">  private static long toULong(int sint) {</a>
+<span class="sourceLineNo">375</span><a id="line.375">    return sint &amp; 0x00000000FFFFFFFFL;</a>
+<span class="sourceLineNo">376</span><a id="line.376">  }</a>
+<span class="sourceLineNo">377</span><a id="line.377"></a>
+<span class="sourceLineNo">378</span><a id="line.378">  /**</a>
+<span class="sourceLineNo">379</span><a id="line.379">   * @param buf</a>
+<span class="sourceLineNo">380</span><a id="line.380">   * @return</a>
+<span class="sourceLineNo">381</span><a id="line.381">   */</a>
+<span class="sourceLineNo">382</span><a id="line.382">  private static int toShort(int... buf) {</a>
+<span class="sourceLineNo">383</span><a id="line.383">    return (short) (((buf[0] &amp; 0xFF) &lt;&lt; 8) + ((buf[1] &amp; 0xFF) &lt;&lt; 0));</a>
+<span class="sourceLineNo">384</span><a id="line.384">  }</a>
+<span class="sourceLineNo">385</span><a id="line.385"></a>
+<span class="sourceLineNo">386</span><a id="line.386">  /**</a>
+<span class="sourceLineNo">387</span><a id="line.387">   * @param buf</a>
+<span class="sourceLineNo">388</span><a id="line.388">   * @return</a>
+<span class="sourceLineNo">389</span><a id="line.389">   */</a>
+<span class="sourceLineNo">390</span><a id="line.390">  private static int toInt(int... buf) {</a>
+<span class="sourceLineNo">391</span><a id="line.391">    return (int)</a>
+<span class="sourceLineNo">392</span><a id="line.392">        ((buf[0] &amp; 0xFF) &lt;&lt; 24 | (buf[1] &amp; 0xFF) &lt;&lt; 16 | (buf[2] &amp; 0xFF) &lt;&lt; 8 | (buf[3] &amp; 0xFF));</a>
+<span class="sourceLineNo">393</span><a id="line.393">  }</a>
+<span class="sourceLineNo">394</span><a id="line.394"></a>
+<span class="sourceLineNo">395</span><a id="line.395">  /**</a>
+<span class="sourceLineNo">396</span><a id="line.396">   * Switch to standard SPI mode.</a>
+<span class="sourceLineNo">397</span><a id="line.397">   *</a>
+<span class="sourceLineNo">398</span><a id="line.398">   * @return</a>
+<span class="sourceLineNo">399</span><a id="line.399">   */</a>
+<span class="sourceLineNo">400</span><a id="line.400">  private boolean switchToStandardSPI() {</a>
+<span class="sourceLineNo">401</span><a id="line.401">    // Check to see whether the acquire thread is active. If so, wait for it to stop</a>
+<span class="sourceLineNo">402</span><a id="line.402">    // producing data.</a>
+<span class="sourceLineNo">403</span><a id="line.403">    if (m_thread_active) {</a>
+<span class="sourceLineNo">404</span><a id="line.404">      m_thread_active = false;</a>
+<span class="sourceLineNo">405</span><a id="line.405">      while (!m_thread_idle) {</a>
+<span class="sourceLineNo">406</span><a id="line.406">        try {</a>
+<span class="sourceLineNo">407</span><a id="line.407">          Thread.sleep(10);</a>
+<span class="sourceLineNo">408</span><a id="line.408">        } catch (InterruptedException e) {</a>
+<span class="sourceLineNo">409</span><a id="line.409">        }</a>
+<span class="sourceLineNo">410</span><a id="line.410">      }</a>
+<span class="sourceLineNo">411</span><a id="line.411">      System.out.println("Paused the IMU processing thread successfully!");</a>
+<span class="sourceLineNo">412</span><a id="line.412">      // Maybe we're in auto SPI mode? If so, kill auto SPI, and then SPI.</a>
+<span class="sourceLineNo">413</span><a id="line.413">      if (m_spi != null &amp;&amp; m_auto_configured) {</a>
+<span class="sourceLineNo">414</span><a id="line.414">        m_spi.stopAuto();</a>
+<span class="sourceLineNo">415</span><a id="line.415">        // We need to get rid of all the garbage left in the auto SPI buffer after</a>
+<span class="sourceLineNo">416</span><a id="line.416">        // stopping it.</a>
+<span class="sourceLineNo">417</span><a id="line.417">        // Sometimes data magically reappears, so we have to check the buffer size a</a>
+<span class="sourceLineNo">418</span><a id="line.418">        // couple of times</a>
+<span class="sourceLineNo">419</span><a id="line.419">        // to be sure we got it all. Yuck.</a>
+<span class="sourceLineNo">420</span><a id="line.420">        int[] trashBuffer = new int[200];</a>
+<span class="sourceLineNo">421</span><a id="line.421">        try {</a>
+<span class="sourceLineNo">422</span><a id="line.422">          Thread.sleep(100);</a>
+<span class="sourceLineNo">423</span><a id="line.423">        } catch (InterruptedException e) {</a>
+<span class="sourceLineNo">424</span><a id="line.424">        }</a>
+<span class="sourceLineNo">425</span><a id="line.425">        int data_count = m_spi.readAutoReceivedData(trashBuffer, 0, 0);</a>
+<span class="sourceLineNo">426</span><a id="line.426">        while (data_count &gt; 0) {</a>
+<span class="sourceLineNo">427</span><a id="line.427">          m_spi.readAutoReceivedData(trashBuffer, Math.min(data_count, 200), 0);</a>
+<span class="sourceLineNo">428</span><a id="line.428">          data_count = m_spi.readAutoReceivedData(trashBuffer, 0, 0);</a>
+<span class="sourceLineNo">429</span><a id="line.429">        }</a>
+<span class="sourceLineNo">430</span><a id="line.430">        System.out.println("Paused auto SPI successfully.");</a>
+<span class="sourceLineNo">431</span><a id="line.431">      }</a>
+<span class="sourceLineNo">432</span><a id="line.432">    }</a>
+<span class="sourceLineNo">433</span><a id="line.433">    // There doesn't seem to be a SPI port active. Let's try to set one up</a>
+<span class="sourceLineNo">434</span><a id="line.434">    if (m_spi == null) {</a>
+<span class="sourceLineNo">435</span><a id="line.435">      System.out.println("Setting up a new SPI port.");</a>
+<span class="sourceLineNo">436</span><a id="line.436">      m_spi = new SPI(m_spi_port);</a>
+<span class="sourceLineNo">437</span><a id="line.437">      m_spi.setClockRate(2000000);</a>
+<span class="sourceLineNo">438</span><a id="line.438">      m_spi.setMSBFirst();</a>
+<span class="sourceLineNo">439</span><a id="line.439">      m_spi.setSampleDataOnTrailingEdge();</a>
+<span class="sourceLineNo">440</span><a id="line.440">      m_spi.setClockActiveLow();</a>
+<span class="sourceLineNo">441</span><a id="line.441">      m_spi.setChipSelectActiveLow();</a>
+<span class="sourceLineNo">442</span><a id="line.442">      readRegister(PROD_ID); // Dummy read</a>
+<span class="sourceLineNo">443</span><a id="line.443"></a>
+<span class="sourceLineNo">444</span><a id="line.444">      // Validate the product ID</a>
+<span class="sourceLineNo">445</span><a id="line.445">      if (readRegister(PROD_ID) != 16982) {</a>
+<span class="sourceLineNo">446</span><a id="line.446">        DriverStation.reportError("Could not find ADIS16470", false);</a>
+<span class="sourceLineNo">447</span><a id="line.447">        close();</a>
+<span class="sourceLineNo">448</span><a id="line.448">        return false;</a>
+<span class="sourceLineNo">449</span><a id="line.449">      }</a>
+<span class="sourceLineNo">450</span><a id="line.450">      return true;</a>
+<span class="sourceLineNo">451</span><a id="line.451">    } else {</a>
+<span class="sourceLineNo">452</span><a id="line.452">      // Maybe the SPI port is active, but not in auto SPI mode? Try to read the</a>
+<span class="sourceLineNo">453</span><a id="line.453">      // product ID.</a>
+<span class="sourceLineNo">454</span><a id="line.454">      readRegister(PROD_ID); // dummy read</a>
+<span class="sourceLineNo">455</span><a id="line.455">      if (readRegister(PROD_ID) != 16982) {</a>
+<span class="sourceLineNo">456</span><a id="line.456">        DriverStation.reportError("Could not find an ADIS16470", false);</a>
+<span class="sourceLineNo">457</span><a id="line.457">        close();</a>
+<span class="sourceLineNo">458</span><a id="line.458">        return false;</a>
+<span class="sourceLineNo">459</span><a id="line.459">      } else {</a>
+<span class="sourceLineNo">460</span><a id="line.460">        return true;</a>
+<span class="sourceLineNo">461</span><a id="line.461">      }</a>
+<span class="sourceLineNo">462</span><a id="line.462">    }</a>
+<span class="sourceLineNo">463</span><a id="line.463">  }</a>
+<span class="sourceLineNo">464</span><a id="line.464"></a>
+<span class="sourceLineNo">465</span><a id="line.465">  /** @return */</a>
+<span class="sourceLineNo">466</span><a id="line.466">  boolean switchToAutoSPI() {</a>
+<span class="sourceLineNo">467</span><a id="line.467">    // No SPI port has been set up. Go set one up first.</a>
+<span class="sourceLineNo">468</span><a id="line.468">    if (m_spi == null) {</a>
+<span class="sourceLineNo">469</span><a id="line.469">      if (!switchToStandardSPI()) {</a>
+<span class="sourceLineNo">470</span><a id="line.470">        DriverStation.reportError("Failed to start/restart auto SPI", false);</a>
+<span class="sourceLineNo">471</span><a id="line.471">        return false;</a>
+<span class="sourceLineNo">472</span><a id="line.472">      }</a>
+<span class="sourceLineNo">473</span><a id="line.473">    }</a>
+<span class="sourceLineNo">474</span><a id="line.474">    // Only set up the interrupt if needed.</a>
+<span class="sourceLineNo">475</span><a id="line.475">    if (m_auto_interrupt == null) {</a>
+<span class="sourceLineNo">476</span><a id="line.476">      // Configure interrupt on SPI CS1</a>
+<span class="sourceLineNo">477</span><a id="line.477">      m_auto_interrupt = new DigitalInput(26);</a>
+<span class="sourceLineNo">478</span><a id="line.478">    }</a>
+<span class="sourceLineNo">479</span><a id="line.479">    // The auto SPI controller gets angry if you try to set up two instances on one</a>
+<span class="sourceLineNo">480</span><a id="line.480">    // bus.</a>
+<span class="sourceLineNo">481</span><a id="line.481">    if (!m_auto_configured) {</a>
+<span class="sourceLineNo">482</span><a id="line.482">      m_spi.initAuto(8200);</a>
+<span class="sourceLineNo">483</span><a id="line.483">      m_auto_configured = true;</a>
+<span class="sourceLineNo">484</span><a id="line.484">    }</a>
+<span class="sourceLineNo">485</span><a id="line.485">    // Do we need to change auto SPI settings?</a>
+<span class="sourceLineNo">486</span><a id="line.486">    switch (m_yaw_axis) {</a>
+<span class="sourceLineNo">487</span><a id="line.487">      case kX:</a>
+<span class="sourceLineNo">488</span><a id="line.488">        m_spi.setAutoTransmitData(m_autospi_x_packet, 2);</a>
+<span class="sourceLineNo">489</span><a id="line.489">        break;</a>
+<span class="sourceLineNo">490</span><a id="line.490">      case kY:</a>
+<span class="sourceLineNo">491</span><a id="line.491">        m_spi.setAutoTransmitData(m_autospi_y_packet, 2);</a>
+<span class="sourceLineNo">492</span><a id="line.492">        break;</a>
+<span class="sourceLineNo">493</span><a id="line.493">      default:</a>
+<span class="sourceLineNo">494</span><a id="line.494">        m_spi.setAutoTransmitData(m_autospi_z_packet, 2);</a>
+<span class="sourceLineNo">495</span><a id="line.495">        break;</a>
+<span class="sourceLineNo">496</span><a id="line.496">    }</a>
+<span class="sourceLineNo">497</span><a id="line.497">    // Configure auto stall time</a>
+<span class="sourceLineNo">498</span><a id="line.498">    m_spi.configureAutoStall(5, 1000, 1);</a>
+<span class="sourceLineNo">499</span><a id="line.499">    // Kick off auto SPI (Note: Device configration impossible after auto SPI is</a>
+<span class="sourceLineNo">500</span><a id="line.500">    // activated)</a>
+<span class="sourceLineNo">501</span><a id="line.501">    // DR High = Data good (data capture should be triggered on the rising edge)</a>
+<span class="sourceLineNo">502</span><a id="line.502">    m_spi.startAutoTrigger(m_auto_interrupt, true, false);</a>
+<span class="sourceLineNo">503</span><a id="line.503"></a>
+<span class="sourceLineNo">504</span><a id="line.504">    // Check to see if the acquire thread is running. If not, kick one off.</a>
+<span class="sourceLineNo">505</span><a id="line.505">    if (!m_acquire_task.isAlive()) {</a>
+<span class="sourceLineNo">506</span><a id="line.506">      m_first_run = true;</a>
+<span class="sourceLineNo">507</span><a id="line.507">      m_thread_active = true;</a>
+<span class="sourceLineNo">508</span><a id="line.508">      m_acquire_task.start();</a>
+<span class="sourceLineNo">509</span><a id="line.509">      System.out.println("Processing thread activated!");</a>
+<span class="sourceLineNo">510</span><a id="line.510">    } else {</a>
+<span class="sourceLineNo">511</span><a id="line.511">      // The thread was running, re-init run variables and start it up again.</a>
+<span class="sourceLineNo">512</span><a id="line.512">      m_first_run = true;</a>
+<span class="sourceLineNo">513</span><a id="line.513">      m_thread_active = true;</a>
+<span class="sourceLineNo">514</span><a id="line.514">      System.out.println("Processing thread activated!");</a>
+<span class="sourceLineNo">515</span><a id="line.515">    }</a>
+<span class="sourceLineNo">516</span><a id="line.516">    // Looks like the thread didn't start for some reason. Abort.</a>
+<span class="sourceLineNo">517</span><a id="line.517">    if (!m_acquire_task.isAlive()) {</a>
+<span class="sourceLineNo">518</span><a id="line.518">      DriverStation.reportError("Failed to start/restart the acquire() thread.", false);</a>
+<span class="sourceLineNo">519</span><a id="line.519">      close();</a>
+<span class="sourceLineNo">520</span><a id="line.520">      return false;</a>
+<span class="sourceLineNo">521</span><a id="line.521">    }</a>
+<span class="sourceLineNo">522</span><a id="line.522">    return true;</a>
+<span class="sourceLineNo">523</span><a id="line.523">  }</a>
+<span class="sourceLineNo">524</span><a id="line.524"></a>
+<span class="sourceLineNo">525</span><a id="line.525">  /**</a>
+<span class="sourceLineNo">526</span><a id="line.526">   * Configures calibration time</a>
+<span class="sourceLineNo">527</span><a id="line.527">   *</a>
+<span class="sourceLineNo">528</span><a id="line.528">   * @param new_cal_time New calibration time</a>
+<span class="sourceLineNo">529</span><a id="line.529">   * @return 1 if the new calibration time is the same as the current one else 0</a>
+<span class="sourceLineNo">530</span><a id="line.530">   */</a>
+<span class="sourceLineNo">531</span><a id="line.531">  public int configCalTime(CalibrationTime new_cal_time) {</a>
+<span class="sourceLineNo">532</span><a id="line.532">    if (m_calibration_time == new_cal_time.value) {</a>
+<span class="sourceLineNo">533</span><a id="line.533">      return 1;</a>
+<span class="sourceLineNo">534</span><a id="line.534">    }</a>
+<span class="sourceLineNo">535</span><a id="line.535">    if (!switchToStandardSPI()) {</a>
+<span class="sourceLineNo">536</span><a id="line.536">      DriverStation.reportError("Failed to configure/reconfigure standard SPI.", false);</a>
+<span class="sourceLineNo">537</span><a id="line.537">      return 2;</a>
+<span class="sourceLineNo">538</span><a id="line.538">    }</a>
+<span class="sourceLineNo">539</span><a id="line.539">    m_calibration_time = new_cal_time.value;</a>
+<span class="sourceLineNo">540</span><a id="line.540">    writeRegister(NULL_CNFG, (m_calibration_time | 0x700));</a>
+<span class="sourceLineNo">541</span><a id="line.541">    if (!switchToAutoSPI()) {</a>
+<span class="sourceLineNo">542</span><a id="line.542">      DriverStation.reportError("Failed to configure/reconfigure auto SPI.", false);</a>
+<span class="sourceLineNo">543</span><a id="line.543">      return 2;</a>
+<span class="sourceLineNo">544</span><a id="line.544">    }</a>
+<span class="sourceLineNo">545</span><a id="line.545">    return 0;</a>
+<span class="sourceLineNo">546</span><a id="line.546">  }</a>
+<span class="sourceLineNo">547</span><a id="line.547"></a>
+<span class="sourceLineNo">548</span><a id="line.548">  public int configDecRate(int reg) {</a>
+<span class="sourceLineNo">549</span><a id="line.549">    int m_reg = reg;</a>
+<span class="sourceLineNo">550</span><a id="line.550">    if (!switchToStandardSPI()) {</a>
+<span class="sourceLineNo">551</span><a id="line.551">      DriverStation.reportError("Failed to configure/reconfigure standard SPI.", false);</a>
+<span class="sourceLineNo">552</span><a id="line.552">      return 2;</a>
+<span class="sourceLineNo">553</span><a id="line.553">    }</a>
+<span class="sourceLineNo">554</span><a id="line.554">    if (m_reg &gt; 1999) {</a>
+<span class="sourceLineNo">555</span><a id="line.555">      DriverStation.reportError("Attemted to write an invalid deimation value.", false);</a>
+<span class="sourceLineNo">556</span><a id="line.556">      m_reg = 1999;</a>
+<span class="sourceLineNo">557</span><a id="line.557">    }</a>
+<span class="sourceLineNo">558</span><a id="line.558">    m_scaled_sample_rate = (((m_reg + 1.0) / 2000.0) * 1000000.0);</a>
+<span class="sourceLineNo">559</span><a id="line.559">    writeRegister(DEC_RATE, m_reg);</a>
+<span class="sourceLineNo">560</span><a id="line.560">    System.out.println("Decimation register: " + readRegister(DEC_RATE));</a>
+<span class="sourceLineNo">561</span><a id="line.561">    if (!switchToAutoSPI()) {</a>
+<span class="sourceLineNo">562</span><a id="line.562">      DriverStation.reportError("Failed to configure/reconfigure auto SPI.", false);</a>
+<span class="sourceLineNo">563</span><a id="line.563">      return 2;</a>
+<span class="sourceLineNo">564</span><a id="line.564">    }</a>
+<span class="sourceLineNo">565</span><a id="line.565">    return 0;</a>
+<span class="sourceLineNo">566</span><a id="line.566">  }</a>
+<span class="sourceLineNo">567</span><a id="line.567"></a>
+<span class="sourceLineNo">568</span><a id="line.568">  /**</a>
+<span class="sourceLineNo">569</span><a id="line.569">   * Calibrate the gyro. It's important to make sure that the robot is not moving while the</a>
+<span class="sourceLineNo">570</span><a id="line.570">   * calibration is in progress, this is typically done when the robot is first turned on while it's</a>
+<span class="sourceLineNo">571</span><a id="line.571">   * sitting at rest before the match starts.</a>
+<span class="sourceLineNo">572</span><a id="line.572">   */</a>
+<span class="sourceLineNo">573</span><a id="line.573">  public void calibrate() {</a>
+<span class="sourceLineNo">574</span><a id="line.574">    if (!switchToStandardSPI()) {</a>
+<span class="sourceLineNo">575</span><a id="line.575">      DriverStation.reportError("Failed to configure/reconfigure standard SPI.", false);</a>
+<span class="sourceLineNo">576</span><a id="line.576">    }</a>
+<span class="sourceLineNo">577</span><a id="line.577">    writeRegister(GLOB_CMD, 0x0001);</a>
+<span class="sourceLineNo">578</span><a id="line.578">    if (!switchToAutoSPI()) {</a>
+<span class="sourceLineNo">579</span><a id="line.579">      DriverStation.reportError("Failed to configure/reconfigure auto SPI.", false);</a>
+<span class="sourceLineNo">580</span><a id="line.580">    }</a>
+<span class="sourceLineNo">581</span><a id="line.581">    ;</a>
+<span class="sourceLineNo">582</span><a id="line.582">  }</a>
+<span class="sourceLineNo">583</span><a id="line.583"></a>
+<span class="sourceLineNo">584</span><a id="line.584">  /**</a>
+<span class="sourceLineNo">585</span><a id="line.585">   * Sets the yaw axis</a>
+<span class="sourceLineNo">586</span><a id="line.586">   *</a>
+<span class="sourceLineNo">587</span><a id="line.587">   * @param yaw_axis The new yaw axis to use</a>
+<span class="sourceLineNo">588</span><a id="line.588">   * @return 1 if the new yaw axis is the same as the current one, 2 if the switch to Standard SPI</a>
+<span class="sourceLineNo">589</span><a id="line.589">   *     failed, else 0.</a>
+<span class="sourceLineNo">590</span><a id="line.590">   */</a>
+<span class="sourceLineNo">591</span><a id="line.591">  public int setYawAxis(IMUAxis yaw_axis) {</a>
+<span class="sourceLineNo">592</span><a id="line.592">    if (m_yaw_axis == yaw_axis) {</a>
+<span class="sourceLineNo">593</span><a id="line.593">      return 1;</a>
+<span class="sourceLineNo">594</span><a id="line.594">    }</a>
+<span class="sourceLineNo">595</span><a id="line.595">    if (!switchToStandardSPI()) {</a>
+<span class="sourceLineNo">596</span><a id="line.596">      DriverStation.reportError("Failed to configure/reconfigure standard SPI.", false);</a>
+<span class="sourceLineNo">597</span><a id="line.597">      return 2;</a>
+<span class="sourceLineNo">598</span><a id="line.598">    }</a>
+<span class="sourceLineNo">599</span><a id="line.599">    m_yaw_axis = yaw_axis;</a>
+<span class="sourceLineNo">600</span><a id="line.600">    if (!switchToAutoSPI()) {</a>
+<span class="sourceLineNo">601</span><a id="line.601">      DriverStation.reportError("Failed to configure/reconfigure auto SPI.", false);</a>
+<span class="sourceLineNo">602</span><a id="line.602">    }</a>
+<span class="sourceLineNo">603</span><a id="line.603">    return 0;</a>
+<span class="sourceLineNo">604</span><a id="line.604">  }</a>
+<span class="sourceLineNo">605</span><a id="line.605"></a>
+<span class="sourceLineNo">606</span><a id="line.606">  /**</a>
+<span class="sourceLineNo">607</span><a id="line.607">   * @param reg</a>
+<span class="sourceLineNo">608</span><a id="line.608">   * @return</a>
+<span class="sourceLineNo">609</span><a id="line.609">   */</a>
+<span class="sourceLineNo">610</span><a id="line.610">  private int readRegister(int reg) {</a>
+<span class="sourceLineNo">611</span><a id="line.611">    ByteBuffer buf = ByteBuffer.allocateDirect(2);</a>
+<span class="sourceLineNo">612</span><a id="line.612">    buf.order(ByteOrder.BIG_ENDIAN);</a>
+<span class="sourceLineNo">613</span><a id="line.613">    buf.put(0, (byte) (reg &amp; 0x7f));</a>
+<span class="sourceLineNo">614</span><a id="line.614">    buf.put(1, (byte) 0);</a>
+<span class="sourceLineNo">615</span><a id="line.615"></a>
+<span class="sourceLineNo">616</span><a id="line.616">    m_spi.write(buf, 2);</a>
+<span class="sourceLineNo">617</span><a id="line.617">    m_spi.read(false, buf, 2);</a>
+<span class="sourceLineNo">618</span><a id="line.618"></a>
+<span class="sourceLineNo">619</span><a id="line.619">    return toUShort(buf);</a>
+<span class="sourceLineNo">620</span><a id="line.620">  }</a>
+<span class="sourceLineNo">621</span><a id="line.621"></a>
+<span class="sourceLineNo">622</span><a id="line.622">  /**</a>
+<span class="sourceLineNo">623</span><a id="line.623">   * @param reg</a>
+<span class="sourceLineNo">624</span><a id="line.624">   * @param val</a>
+<span class="sourceLineNo">625</span><a id="line.625">   */</a>
+<span class="sourceLineNo">626</span><a id="line.626">  private void writeRegister(int reg, int val) {</a>
+<span class="sourceLineNo">627</span><a id="line.627">    ByteBuffer buf = ByteBuffer.allocateDirect(2);</a>
+<span class="sourceLineNo">628</span><a id="line.628">    // low byte</a>
+<span class="sourceLineNo">629</span><a id="line.629">    buf.put(0, (byte) ((0x80 | reg)));</a>
+<span class="sourceLineNo">630</span><a id="line.630">    buf.put(1, (byte) (val &amp; 0xff));</a>
+<span class="sourceLineNo">631</span><a id="line.631">    m_spi.write(buf, 2);</a>
+<span class="sourceLineNo">632</span><a id="line.632">    // high byte</a>
+<span class="sourceLineNo">633</span><a id="line.633">    buf.put(0, (byte) (0x81 | reg));</a>
+<span class="sourceLineNo">634</span><a id="line.634">    buf.put(1, (byte) (val &gt;&gt; 8));</a>
+<span class="sourceLineNo">635</span><a id="line.635">    m_spi.write(buf, 2);</a>
+<span class="sourceLineNo">636</span><a id="line.636">  }</a>
+<span class="sourceLineNo">637</span><a id="line.637"></a>
+<span class="sourceLineNo">638</span><a id="line.638">  /** {@inheritDoc} */</a>
+<span class="sourceLineNo">639</span><a id="line.639">  public void reset() {</a>
+<span class="sourceLineNo">640</span><a id="line.640">    synchronized (this) {</a>
+<span class="sourceLineNo">641</span><a id="line.641">      m_integ_angle = 0.0;</a>
+<span class="sourceLineNo">642</span><a id="line.642">    }</a>
+<span class="sourceLineNo">643</span><a id="line.643">  }</a>
+<span class="sourceLineNo">644</span><a id="line.644"></a>
+<span class="sourceLineNo">645</span><a id="line.645">  /** Delete (free) the spi port used for the IMU. */</a>
+<span class="sourceLineNo">646</span><a id="line.646">  @Override</a>
+<span class="sourceLineNo">647</span><a id="line.647">  public void close() {</a>
+<span class="sourceLineNo">648</span><a id="line.648">    if (m_thread_active) {</a>
+<span class="sourceLineNo">649</span><a id="line.649">      m_thread_active = false;</a>
+<span class="sourceLineNo">650</span><a id="line.650">      try {</a>
+<span class="sourceLineNo">651</span><a id="line.651">        if (m_acquire_task != null) {</a>
+<span class="sourceLineNo">652</span><a id="line.652">          m_acquire_task.join();</a>
+<span class="sourceLineNo">653</span><a id="line.653">          m_acquire_task = null;</a>
+<span class="sourceLineNo">654</span><a id="line.654">        }</a>
+<span class="sourceLineNo">655</span><a id="line.655">      } catch (InterruptedException e) {</a>
+<span class="sourceLineNo">656</span><a id="line.656">      }</a>
+<span class="sourceLineNo">657</span><a id="line.657">      if (m_spi != null) {</a>
+<span class="sourceLineNo">658</span><a id="line.658">        if (m_auto_configured) {</a>
+<span class="sourceLineNo">659</span><a id="line.659">          m_spi.stopAuto();</a>
+<span class="sourceLineNo">660</span><a id="line.660">        }</a>
+<span class="sourceLineNo">661</span><a id="line.661">        m_spi.close();</a>
+<span class="sourceLineNo">662</span><a id="line.662">        m_auto_configured = false;</a>
+<span class="sourceLineNo">663</span><a id="line.663">        if (m_auto_interrupt != null) {</a>
+<span class="sourceLineNo">664</span><a id="line.664">          m_auto_interrupt.close();</a>
+<span class="sourceLineNo">665</span><a id="line.665">          m_auto_interrupt = null;</a>
+<span class="sourceLineNo">666</span><a id="line.666">        }</a>
+<span class="sourceLineNo">667</span><a id="line.667">        m_spi = null;</a>
+<span class="sourceLineNo">668</span><a id="line.668">      }</a>
+<span class="sourceLineNo">669</span><a id="line.669">    }</a>
+<span class="sourceLineNo">670</span><a id="line.670">    System.out.println("Finished cleaning up after the IMU driver.");</a>
+<span class="sourceLineNo">671</span><a id="line.671">  }</a>
+<span class="sourceLineNo">672</span><a id="line.672"></a>
+<span class="sourceLineNo">673</span><a id="line.673">  /** */</a>
+<span class="sourceLineNo">674</span><a id="line.674">  private void acquire() {</a>
+<span class="sourceLineNo">675</span><a id="line.675">    // Set data packet length</a>
+<span class="sourceLineNo">676</span><a id="line.676">    final int dataset_len = 19; // 18 data points + timestamp</a>
+<span class="sourceLineNo">677</span><a id="line.677">    final int BUFFER_SIZE = 4000;</a>
+<span class="sourceLineNo">678</span><a id="line.678"></a>
+<span class="sourceLineNo">679</span><a id="line.679">    // Set up buffers and variables</a>
+<span class="sourceLineNo">680</span><a id="line.680">    int[] buffer = new int[BUFFER_SIZE];</a>
+<span class="sourceLineNo">681</span><a id="line.681">    int data_count = 0;</a>
+<span class="sourceLineNo">682</span><a id="line.682">    int data_remainder = 0;</a>
+<span class="sourceLineNo">683</span><a id="line.683">    int data_to_read = 0;</a>
+<span class="sourceLineNo">684</span><a id="line.684">    double previous_timestamp = 0.0;</a>
+<span class="sourceLineNo">685</span><a id="line.685">    double delta_angle = 0.0;</a>
+<span class="sourceLineNo">686</span><a id="line.686">    double gyro_rate_x = 0.0;</a>
+<span class="sourceLineNo">687</span><a id="line.687">    double gyro_rate_y = 0.0;</a>
+<span class="sourceLineNo">688</span><a id="line.688">    double gyro_rate_z = 0.0;</a>
+<span class="sourceLineNo">689</span><a id="line.689">    double accel_x = 0.0;</a>
+<span class="sourceLineNo">690</span><a id="line.690">    double accel_y = 0.0;</a>
+<span class="sourceLineNo">691</span><a id="line.691">    double temp = 0.0;</a>
+<span class="sourceLineNo">692</span><a id="line.692">    //double accel_z = 0.0; EJM</a>
+<span class="sourceLineNo">693</span><a id="line.693">    double gyro_rate_x_si = 0.0;</a>
+<span class="sourceLineNo">694</span><a id="line.694">    double gyro_rate_y_si = 0.0;</a>
+<span class="sourceLineNo">695</span><a id="line.695">    double gyro_rate_z_si = 0.0;</a>
+<span class="sourceLineNo">696</span><a id="line.696">    double accel_x_si = 0.0;</a>
+<span class="sourceLineNo">697</span><a id="line.697">    double accel_y_si = 0.0;</a>
+<span class="sourceLineNo">698</span><a id="line.698">    double accel_z_si = 0.0;</a>
+<span class="sourceLineNo">699</span><a id="line.699">    double compAngleX = 0.0;</a>
+<span class="sourceLineNo">700</span><a id="line.700">    double compAngleY = 0.0;</a>
+<span class="sourceLineNo">701</span><a id="line.701">    double accelAngleX = 0.0;</a>
+<span class="sourceLineNo">702</span><a id="line.702">    double accelAngleY = 0.0;</a>
+<span class="sourceLineNo">703</span><a id="line.703"></a>
+<span class="sourceLineNo">704</span><a id="line.704">    while (true) {</a>
+<span class="sourceLineNo">705</span><a id="line.705">      // Sleep loop for 10ms</a>
+<span class="sourceLineNo">706</span><a id="line.706">      try {</a>
+<span class="sourceLineNo">707</span><a id="line.707">        Thread.sleep(5);</a>
+<span class="sourceLineNo">708</span><a id="line.708">        // Thread.sleep(10); EJM</a>
+<span class="sourceLineNo">709</span><a id="line.709">    } catch (InterruptedException e) {</a>
+<span class="sourceLineNo">710</span><a id="line.710">      }</a>
+<span class="sourceLineNo">711</span><a id="line.711"></a>
+<span class="sourceLineNo">712</span><a id="line.712">      if (m_thread_active) {</a>
+<span class="sourceLineNo">713</span><a id="line.713">        m_thread_idle = false;</a>
+<span class="sourceLineNo">714</span><a id="line.714"></a>
+<span class="sourceLineNo">715</span><a id="line.715">        data_count =</a>
+<span class="sourceLineNo">716</span><a id="line.716">            m_spi.readAutoReceivedData(</a>
+<span class="sourceLineNo">717</span><a id="line.717">                buffer, 0, 0); // Read number of bytes currently stored in the</a>
+<span class="sourceLineNo">718</span><a id="line.718">        // buffer</a>
+<span class="sourceLineNo">719</span><a id="line.719">        data_remainder =</a>
+<span class="sourceLineNo">720</span><a id="line.720">            data_count % dataset_len; // Check if frame is incomplete. Add 1 because of timestamp</a>
+<span class="sourceLineNo">721</span><a id="line.721">        data_to_read = data_count - data_remainder; // Remove incomplete data from read count</a>
+<span class="sourceLineNo">722</span><a id="line.722">        /* Want to cap the data to read in a single read at the buffer size */</a>
+<span class="sourceLineNo">723</span><a id="line.723">        if (data_to_read &gt; BUFFER_SIZE) {</a>
+<span class="sourceLineNo">724</span><a id="line.724">          DriverStation.reportWarning(</a>
+<span class="sourceLineNo">725</span><a id="line.725">              "ADIS16470 data processing thread overrun has occurred!", false);</a>
+<span class="sourceLineNo">726</span><a id="line.726">          data_to_read = BUFFER_SIZE - (BUFFER_SIZE % dataset_len);</a>
+<span class="sourceLineNo">727</span><a id="line.727">        }</a>
+<span class="sourceLineNo">728</span><a id="line.728">        m_spi.readAutoReceivedData(</a>
+<span class="sourceLineNo">729</span><a id="line.729">            buffer, data_to_read, 0); // Read data from DMA buffer (only complete sets)</a>
+<span class="sourceLineNo">730</span><a id="line.730"></a>
+<span class="sourceLineNo">731</span><a id="line.731">        // Could be multiple data sets in the buffer. Handle each one.</a>
+<span class="sourceLineNo">732</span><a id="line.732">        for (int i = 0; i &lt; data_to_read; i += dataset_len) {</a>
+<span class="sourceLineNo">733</span><a id="line.733">          // Timestamp is at buffer[i]</a>
+<span class="sourceLineNo">734</span><a id="line.734">          m_dt = ((double) buffer[i] - previous_timestamp) / 1000000.0;</a>
+<span class="sourceLineNo">735</span><a id="line.735"></a>
+<span class="sourceLineNo">736</span><a id="line.736">          /*</a>
+<span class="sourceLineNo">737</span><a id="line.737">           * System.out.println(((toInt(buffer[i + 3], buffer[i + 4], buffer[i + 5],</a>
+<span class="sourceLineNo">738</span><a id="line.738">           * buffer[i + 6]))*delta_angle_sf) / ((10000.0 / (buffer[i] -</a>
+<span class="sourceLineNo">739</span><a id="line.739">           * previous_timestamp)) / 100.0));</a>
+<span class="sourceLineNo">740</span><a id="line.740">           * // DEBUG: Plot Sub-Array Data in Terminal</a>
+<span class="sourceLineNo">741</span><a id="line.741">           * for (int j = 0; j &lt; data_to_read; j++) {</a>
+<span class="sourceLineNo">742</span><a id="line.742">           * System.out.print(buffer[j]);</a>
+<span class="sourceLineNo">743</span><a id="line.743">           * System.out.print(" ,");</a>
+<span class="sourceLineNo">744</span><a id="line.744">           * }</a>
+<span class="sourceLineNo">745</span><a id="line.745">           * System.out.println(" ");</a>
+<span class="sourceLineNo">746</span><a id="line.746">           * //System.out.println(((toInt(buffer[i + 3], buffer[i + 4], buffer[i + 5],</a>
+<span class="sourceLineNo">747</span><a id="line.747">           * buffer[i + 6]))*delta_angle_sf) / ((10000.0 / (buffer[i] -</a>
+<span class="sourceLineNo">748</span><a id="line.748">           * previous_timestamp)) / 100.0) + "," + buffer[3] + "," + buffer[4] + "," +</a>
+<span class="sourceLineNo">749</span><a id="line.749">           * buffer[5] + "," + buffer[6]</a>
+<span class="sourceLineNo">750</span><a id="line.750">           * /*toShort(buffer[7], buffer[8]) + "," +</a>
+<span class="sourceLineNo">751</span><a id="line.751">           * toShort(buffer[9], buffer[10]) + "," +</a>
+<span class="sourceLineNo">752</span><a id="line.752">           * toShort(buffer[11], buffer[12]) + "," +</a>
+<span class="sourceLineNo">753</span><a id="line.753">           * toShort(buffer[13], buffer[14]) + "," +</a>
+<span class="sourceLineNo">754</span><a id="line.754">           * toShort(buffer[15], buffer[16]) + ","</a>
+<span class="sourceLineNo">755</span><a id="line.755">           * + toShort(buffer[17], buffer[18]));</a>
+<span class="sourceLineNo">756</span><a id="line.756">           */</a>
+<span class="sourceLineNo">757</span><a id="line.757"></a>
+<span class="sourceLineNo">758</span><a id="line.758">          /*</a>
+<span class="sourceLineNo">759</span><a id="line.759">           * Get delta angle value for selected yaw axis and scale by the elapsed time</a>
+<span class="sourceLineNo">760</span><a id="line.760">           * (based on timestamp)</a>
+<span class="sourceLineNo">761</span><a id="line.761">           */</a>
+<span class="sourceLineNo">762</span><a id="line.762">          delta_angle =</a>
+<span class="sourceLineNo">763</span><a id="line.763">              (toInt(buffer[i + 3], buffer[i + 4], buffer[i + 5], buffer[i + 6]) * delta_angle_sf)</a>
+<span class="sourceLineNo">764</span><a id="line.764">                  / (m_scaled_sample_rate / (buffer[i] - previous_timestamp));</a>
+<span class="sourceLineNo">765</span><a id="line.765">          gyro_rate_x = (toShort(buffer[i + 7], buffer[i + 8]) / 10.0);</a>
+<span class="sourceLineNo">766</span><a id="line.766">          gyro_rate_y = (toShort(buffer[i + 9], buffer[i + 10]) / 10.0);</a>
+<span class="sourceLineNo">767</span><a id="line.767">          gyro_rate_z = (toShort(buffer[i + 11], buffer[i + 12]) / 10.0);</a>
+<span class="sourceLineNo">768</span><a id="line.768">          accel_x = (toShort(buffer[i + 13], buffer[i + 14]) / 800.0);</a>
+<span class="sourceLineNo">769</span><a id="line.769">          accel_y = (toShort(buffer[i + 15], buffer[i + 16]) / 800.0);</a>
+<span class="sourceLineNo">770</span><a id="line.770">          temp = (toShort(buffer[i + 17], buffer[i + 18]) / 10.0);</a>
+<span class="sourceLineNo">771</span><a id="line.771">          //accel_z = (toShort(buffer[i + 17], buffer[i + 18]) / 800.0); EJM</a>
+<span class="sourceLineNo">772</span><a id="line.772"></a>
+<span class="sourceLineNo">773</span><a id="line.773">          // Convert scaled sensor data to SI units (for tilt calculations)</a>
+<span class="sourceLineNo">774</span><a id="line.774">          // TODO: Should the unit outputs be selectable?</a>
+<span class="sourceLineNo">775</span><a id="line.775">          gyro_rate_x_si = gyro_rate_x * deg_to_rad;</a>
+<span class="sourceLineNo">776</span><a id="line.776">          gyro_rate_y_si = gyro_rate_y * deg_to_rad;</a>
+<span class="sourceLineNo">777</span><a id="line.777">          gyro_rate_z_si = gyro_rate_z * deg_to_rad;</a>
+<span class="sourceLineNo">778</span><a id="line.778">          accel_x_si = accel_x * grav;</a>
+<span class="sourceLineNo">779</span><a id="line.779">          accel_y_si = accel_y * grav;</a>
+<span class="sourceLineNo">780</span><a id="line.780">          accel_z_si = 0.0;  </a>
+<span class="sourceLineNo">781</span><a id="line.781">          //accel_z_si = accel_z * grav; EJM</a>
+<span class="sourceLineNo">782</span><a id="line.782"></a>
+<span class="sourceLineNo">783</span><a id="line.783">          // Store timestamp for next iteration</a>
+<span class="sourceLineNo">784</span><a id="line.784">          previous_timestamp = buffer[i];</a>
+<span class="sourceLineNo">785</span><a id="line.785"></a>
+<span class="sourceLineNo">786</span><a id="line.786">          m_alpha = m_tau / (m_tau + m_dt);</a>
+<span class="sourceLineNo">787</span><a id="line.787"></a>
+<span class="sourceLineNo">788</span><a id="line.788">          if (m_first_run) {</a>
+<span class="sourceLineNo">789</span><a id="line.789">            // Set up inclinometer calculations for first run</a>
+<span class="sourceLineNo">790</span><a id="line.790">            accelAngleX =</a>
+<span class="sourceLineNo">791</span><a id="line.791">                Math.atan2(</a>
+<span class="sourceLineNo">792</span><a id="line.792">                    accel_x_si, Math.sqrt((accel_y_si * accel_y_si) + (accel_z_si * accel_z_si)));</a>
+<span class="sourceLineNo">793</span><a id="line.793">            accelAngleY =</a>
+<span class="sourceLineNo">794</span><a id="line.794">                Math.atan2(</a>
+<span class="sourceLineNo">795</span><a id="line.795">                    accel_y_si, Math.sqrt((accel_x_si * accel_x_si) + (accel_z_si * accel_z_si)));</a>
+<span class="sourceLineNo">796</span><a id="line.796">            compAngleX = accelAngleX;</a>
+<span class="sourceLineNo">797</span><a id="line.797">            compAngleY = accelAngleY;</a>
+<span class="sourceLineNo">798</span><a id="line.798">          } else {</a>
+<span class="sourceLineNo">799</span><a id="line.799">            // Run inclinometer calculations</a>
+<span class="sourceLineNo">800</span><a id="line.800">            accelAngleX =</a>
+<span class="sourceLineNo">801</span><a id="line.801">                Math.atan2(</a>
+<span class="sourceLineNo">802</span><a id="line.802">                    accel_x_si, Math.sqrt((accel_y_si * accel_y_si) + (accel_z_si * accel_z_si)));</a>
+<span class="sourceLineNo">803</span><a id="line.803">            accelAngleY =</a>
+<span class="sourceLineNo">804</span><a id="line.804">                Math.atan2(</a>
+<span class="sourceLineNo">805</span><a id="line.805">                    accel_y_si, Math.sqrt((accel_x_si * accel_x_si) + (accel_z_si * accel_z_si)));</a>
+<span class="sourceLineNo">806</span><a id="line.806">            accelAngleX = formatAccelRange(accelAngleX, accel_z_si);</a>
+<span class="sourceLineNo">807</span><a id="line.807">            accelAngleY = formatAccelRange(accelAngleY, accel_z_si);</a>
+<span class="sourceLineNo">808</span><a id="line.808">            compAngleX = compFilterProcess(compAngleX, accelAngleX, -gyro_rate_y_si);</a>
+<span class="sourceLineNo">809</span><a id="line.809">            compAngleY = compFilterProcess(compAngleY, accelAngleY, gyro_rate_x_si);</a>
+<span class="sourceLineNo">810</span><a id="line.810">          }</a>
+<span class="sourceLineNo">811</span><a id="line.811"></a>
+<span class="sourceLineNo">812</span><a id="line.812">          synchronized (this) {</a>
+<span class="sourceLineNo">813</span><a id="line.813">            /* Push data to global variables */</a>
+<span class="sourceLineNo">814</span><a id="line.814">            if (m_first_run) {</a>
+<span class="sourceLineNo">815</span><a id="line.815">              /*</a>
+<span class="sourceLineNo">816</span><a id="line.816">               * Don't accumulate first run. previous_timestamp will be "very" old and the</a>
+<span class="sourceLineNo">817</span><a id="line.817">               * integration will end up way off</a>
+<span class="sourceLineNo">818</span><a id="line.818">               */</a>
+<span class="sourceLineNo">819</span><a id="line.819">              m_integ_angle = 0.0;</a>
+<span class="sourceLineNo">820</span><a id="line.820">            } else {</a>
+<span class="sourceLineNo">821</span><a id="line.821">              m_integ_angle += delta_angle;</a>
+<span class="sourceLineNo">822</span><a id="line.822">            }</a>
+<span class="sourceLineNo">823</span><a id="line.823">            m_gyro_rate_x = gyro_rate_x;</a>
+<span class="sourceLineNo">824</span><a id="line.824">            m_gyro_rate_y = gyro_rate_y;</a>
+<span class="sourceLineNo">825</span><a id="line.825">            m_gyro_rate_z = gyro_rate_z;</a>
+<span class="sourceLineNo">826</span><a id="line.826">            m_accel_x = accel_x;</a>
+<span class="sourceLineNo">827</span><a id="line.827">            m_accel_y = accel_y;</a>
+<span class="sourceLineNo">828</span><a id="line.828">            m_temp = temp;</a>
+<span class="sourceLineNo">829</span><a id="line.829">            //m_accel_z = accel_z; EJM</a>
+<span class="sourceLineNo">830</span><a id="line.830">            m_compAngleX = compAngleX * rad_to_deg;</a>
+<span class="sourceLineNo">831</span><a id="line.831">            m_compAngleY = compAngleY * rad_to_deg;</a>
+<span class="sourceLineNo">832</span><a id="line.832">            m_accelAngleX = accelAngleX * rad_to_deg;</a>
+<span class="sourceLineNo">833</span><a id="line.833">            m_accelAngleY = accelAngleY * rad_to_deg;</a>
+<span class="sourceLineNo">834</span><a id="line.834">          }</a>
+<span class="sourceLineNo">835</span><a id="line.835">          m_first_run = false;</a>
+<span class="sourceLineNo">836</span><a id="line.836">        }</a>
+<span class="sourceLineNo">837</span><a id="line.837">      } else {</a>
+<span class="sourceLineNo">838</span><a id="line.838">        m_thread_idle = true;</a>
+<span class="sourceLineNo">839</span><a id="line.839">        data_count = 0;</a>
+<span class="sourceLineNo">840</span><a id="line.840">        data_remainder = 0;</a>
+<span class="sourceLineNo">841</span><a id="line.841">        data_to_read = 0;</a>
+<span class="sourceLineNo">842</span><a id="line.842">        previous_timestamp = 0.0;</a>
+<span class="sourceLineNo">843</span><a id="line.843">        delta_angle = 0.0;</a>
+<span class="sourceLineNo">844</span><a id="line.844">        gyro_rate_x = 0.0;</a>
+<span class="sourceLineNo">845</span><a id="line.845">        gyro_rate_y = 0.0;</a>
+<span class="sourceLineNo">846</span><a id="line.846">        gyro_rate_z = 0.0;</a>
+<span class="sourceLineNo">847</span><a id="line.847">        accel_x = 0.0;</a>
+<span class="sourceLineNo">848</span><a id="line.848">        accel_y = 0.0;</a>
+<span class="sourceLineNo">849</span><a id="line.849">        temp = 0.0;</a>
+<span class="sourceLineNo">850</span><a id="line.850">        //accel_z = 0.0; EJM</a>
+<span class="sourceLineNo">851</span><a id="line.851">        gyro_rate_x_si = 0.0;</a>
+<span class="sourceLineNo">852</span><a id="line.852">        gyro_rate_y_si = 0.0;</a>
+<span class="sourceLineNo">853</span><a id="line.853">        gyro_rate_z_si = 0.0;</a>
+<span class="sourceLineNo">854</span><a id="line.854">        accel_x_si = 0.0;</a>
+<span class="sourceLineNo">855</span><a id="line.855">        accel_y_si = 0.0;</a>
+<span class="sourceLineNo">856</span><a id="line.856">        accel_z_si = 0.0;</a>
+<span class="sourceLineNo">857</span><a id="line.857">        compAngleX = 0.0;</a>
+<span class="sourceLineNo">858</span><a id="line.858">        compAngleY = 0.0;</a>
+<span class="sourceLineNo">859</span><a id="line.859">        accelAngleX = 0.0;</a>
+<span class="sourceLineNo">860</span><a id="line.860">        accelAngleY = 0.0;</a>
+<span class="sourceLineNo">861</span><a id="line.861">      }</a>
+<span class="sourceLineNo">862</span><a id="line.862">    }</a>
+<span class="sourceLineNo">863</span><a id="line.863">  }</a>
+<span class="sourceLineNo">864</span><a id="line.864"></a>
+<span class="sourceLineNo">865</span><a id="line.865">  /**</a>
+<span class="sourceLineNo">866</span><a id="line.866">   * @param compAngle</a>
+<span class="sourceLineNo">867</span><a id="line.867">   * @param accAngle</a>
+<span class="sourceLineNo">868</span><a id="line.868">   * @return</a>
+<span class="sourceLineNo">869</span><a id="line.869">   */</a>
+<span class="sourceLineNo">870</span><a id="line.870">  private double formatFastConverge(double compAngle, double accAngle) {</a>
+<span class="sourceLineNo">871</span><a id="line.871">    if (compAngle &gt; accAngle + Math.PI) {</a>
+<span class="sourceLineNo">872</span><a id="line.872">      compAngle = compAngle - 2.0 * Math.PI;</a>
+<span class="sourceLineNo">873</span><a id="line.873">    } else if (accAngle &gt; compAngle + Math.PI) {</a>
+<span class="sourceLineNo">874</span><a id="line.874">      compAngle = compAngle + 2.0 * Math.PI;</a>
+<span class="sourceLineNo">875</span><a id="line.875">    }</a>
+<span class="sourceLineNo">876</span><a id="line.876">    return compAngle;</a>
+<span class="sourceLineNo">877</span><a id="line.877">  }</a>
+<span class="sourceLineNo">878</span><a id="line.878"></a>
+<span class="sourceLineNo">879</span><a id="line.879">  /**</a>
+<span class="sourceLineNo">880</span><a id="line.880">   * @param compAngle</a>
+<span class="sourceLineNo">881</span><a id="line.881">   * @return</a>
+<span class="sourceLineNo">882</span><a id="line.882">   */</a>
+<span class="sourceLineNo">883</span><a id="line.883">  private double formatRange0to2PI(double compAngle) {</a>
+<span class="sourceLineNo">884</span><a id="line.884">    while (compAngle &gt;= 2 * Math.PI) {</a>
+<span class="sourceLineNo">885</span><a id="line.885">      compAngle = compAngle - 2.0 * Math.PI;</a>
+<span class="sourceLineNo">886</span><a id="line.886">    }</a>
+<span class="sourceLineNo">887</span><a id="line.887">    while (compAngle &lt; 0.0) {</a>
+<span class="sourceLineNo">888</span><a id="line.888">      compAngle = compAngle + 2.0 * Math.PI;</a>
+<span class="sourceLineNo">889</span><a id="line.889">    }</a>
+<span class="sourceLineNo">890</span><a id="line.890">    return compAngle;</a>
+<span class="sourceLineNo">891</span><a id="line.891">  }</a>
+<span class="sourceLineNo">892</span><a id="line.892"></a>
+<span class="sourceLineNo">893</span><a id="line.893">  /**</a>
+<span class="sourceLineNo">894</span><a id="line.894">   * @param accelAngle</a>
+<span class="sourceLineNo">895</span><a id="line.895">   * @param accelZ</a>
+<span class="sourceLineNo">896</span><a id="line.896">   * @return</a>
+<span class="sourceLineNo">897</span><a id="line.897">   */</a>
+<span class="sourceLineNo">898</span><a id="line.898">  private double formatAccelRange(double accelAngle, double accelZ) {</a>
+<span class="sourceLineNo">899</span><a id="line.899">    if (accelZ &lt; 0.0) {</a>
+<span class="sourceLineNo">900</span><a id="line.900">      accelAngle = Math.PI - accelAngle;</a>
+<span class="sourceLineNo">901</span><a id="line.901">    } else if (accelZ &gt; 0.0 &amp;&amp; accelAngle &lt; 0.0) {</a>
+<span class="sourceLineNo">902</span><a id="line.902">      accelAngle = 2.0 * Math.PI + accelAngle;</a>
+<span class="sourceLineNo">903</span><a id="line.903">    }</a>
+<span class="sourceLineNo">904</span><a id="line.904">    return accelAngle;</a>
+<span class="sourceLineNo">905</span><a id="line.905">  }</a>
+<span class="sourceLineNo">906</span><a id="line.906"></a>
+<span class="sourceLineNo">907</span><a id="line.907">  /**</a>
+<span class="sourceLineNo">908</span><a id="line.908">   * @param compAngle</a>
+<span class="sourceLineNo">909</span><a id="line.909">   * @param accelAngle</a>
+<span class="sourceLineNo">910</span><a id="line.910">   * @param omega</a>
+<span class="sourceLineNo">911</span><a id="line.911">   * @return</a>
+<span class="sourceLineNo">912</span><a id="line.912">   */</a>
+<span class="sourceLineNo">913</span><a id="line.913">  private double compFilterProcess(double compAngle, double accelAngle, double omega) {</a>
+<span class="sourceLineNo">914</span><a id="line.914">    compAngle = formatFastConverge(compAngle, accelAngle);</a>
+<span class="sourceLineNo">915</span><a id="line.915">    compAngle = m_alpha * (compAngle + omega * m_dt) + (1.0 - m_alpha) * accelAngle;</a>
+<span class="sourceLineNo">916</span><a id="line.916">    compAngle = formatRange0to2PI(compAngle);</a>
+<span class="sourceLineNo">917</span><a id="line.917">    if (compAngle &gt; Math.PI) {</a>
+<span class="sourceLineNo">918</span><a id="line.918">      compAngle = compAngle - 2.0 * Math.PI;</a>
+<span class="sourceLineNo">919</span><a id="line.919">    }</a>
+<span class="sourceLineNo">920</span><a id="line.920">    return compAngle;</a>
+<span class="sourceLineNo">921</span><a id="line.921">  }</a>
+<span class="sourceLineNo">922</span><a id="line.922"></a>
+<span class="sourceLineNo">923</span><a id="line.923">  /** @return Yaw axis angle in degrees (CCW positive) */</a>
+<span class="sourceLineNo">924</span><a id="line.924">  public synchronized double getAngle() {</a>
+<span class="sourceLineNo">925</span><a id="line.925">    switch (m_yaw_axis) {</a>
+<span class="sourceLineNo">926</span><a id="line.926">      case kX:</a>
+<span class="sourceLineNo">927</span><a id="line.927">        if (m_simGyroAngleX != null) {</a>
+<span class="sourceLineNo">928</span><a id="line.928">          return m_simGyroAngleX.get();</a>
+<span class="sourceLineNo">929</span><a id="line.929">        }</a>
+<span class="sourceLineNo">930</span><a id="line.930">        break;</a>
+<span class="sourceLineNo">931</span><a id="line.931">      case kY:</a>
+<span class="sourceLineNo">932</span><a id="line.932">        if (m_simGyroAngleY != null) {</a>
+<span class="sourceLineNo">933</span><a id="line.933">          return m_simGyroAngleY.get();</a>
+<span class="sourceLineNo">934</span><a id="line.934">        }</a>
+<span class="sourceLineNo">935</span><a id="line.935">        break;</a>
+<span class="sourceLineNo">936</span><a id="line.936">      case kZ:</a>
+<span class="sourceLineNo">937</span><a id="line.937">        if (m_simGyroAngleZ != null) {</a>
+<span class="sourceLineNo">938</span><a id="line.938">          return m_simGyroAngleZ.get();</a>
+<span class="sourceLineNo">939</span><a id="line.939">        }</a>
+<span class="sourceLineNo">940</span><a id="line.940">        break;</a>
+<span class="sourceLineNo">941</span><a id="line.941">    }</a>
+<span class="sourceLineNo">942</span><a id="line.942">    return m_integ_angle;</a>
+<span class="sourceLineNo">943</span><a id="line.943">  }</a>
+<span class="sourceLineNo">944</span><a id="line.944"></a>
+<span class="sourceLineNo">945</span><a id="line.945">  /** @return Yaw axis angular rate in degrees per second (CCW positive) */</a>
+<span class="sourceLineNo">946</span><a id="line.946">  public synchronized double getRate() {</a>
+<span class="sourceLineNo">947</span><a id="line.947">    if (m_yaw_axis == IMUAxis.kX) {</a>
+<span class="sourceLineNo">948</span><a id="line.948">      if (m_simGyroRateX != null) {</a>
+<span class="sourceLineNo">949</span><a id="line.949">        return m_simGyroRateX.get();</a>
+<span class="sourceLineNo">950</span><a id="line.950">      }</a>
+<span class="sourceLineNo">951</span><a id="line.951">      return m_gyro_rate_x;</a>
+<span class="sourceLineNo">952</span><a id="line.952">    } else if (m_yaw_axis == IMUAxis.kY) {</a>
+<span class="sourceLineNo">953</span><a id="line.953">      if (m_simGyroRateY != null) {</a>
+<span class="sourceLineNo">954</span><a id="line.954">        return m_simGyroRateY.get();</a>
+<span class="sourceLineNo">955</span><a id="line.955">      }</a>
+<span class="sourceLineNo">956</span><a id="line.956">      return m_gyro_rate_y;</a>
+<span class="sourceLineNo">957</span><a id="line.957">    } else if (m_yaw_axis == IMUAxis.kZ) {</a>
+<span class="sourceLineNo">958</span><a id="line.958">      if (m_simGyroRateZ != null) {</a>
+<span class="sourceLineNo">959</span><a id="line.959">        return m_simGyroRateZ.get();</a>
+<span class="sourceLineNo">960</span><a id="line.960">      }</a>
+<span class="sourceLineNo">961</span><a id="line.961">      return m_gyro_rate_z;</a>
+<span class="sourceLineNo">962</span><a id="line.962">    } else {</a>
+<span class="sourceLineNo">963</span><a id="line.963">      return 0.0;</a>
+<span class="sourceLineNo">964</span><a id="line.964">    }</a>
+<span class="sourceLineNo">965</span><a id="line.965">  }</a>
+<span class="sourceLineNo">966</span><a id="line.966"></a>
+<span class="sourceLineNo">967</span><a id="line.967">  /** @return Yaw Axis */</a>
+<span class="sourceLineNo">968</span><a id="line.968">  public IMUAxis getYawAxis() {</a>
+<span class="sourceLineNo">969</span><a id="line.969">    return m_yaw_axis;</a>
+<span class="sourceLineNo">970</span><a id="line.970">  }</a>
+<span class="sourceLineNo">971</span><a id="line.971"></a>
+<span class="sourceLineNo">972</span><a id="line.972">  /** @return current acceleration in the X axis */</a>
+<span class="sourceLineNo">973</span><a id="line.973">  public synchronized double getAccelX() {</a>
+<span class="sourceLineNo">974</span><a id="line.974">    return m_accel_x * 9.81;</a>
+<span class="sourceLineNo">975</span><a id="line.975">  }</a>
+<span class="sourceLineNo">976</span><a id="line.976"></a>
+<span class="sourceLineNo">977</span><a id="line.977">  /** @return current acceleration in the Y axis */</a>
+<span class="sourceLineNo">978</span><a id="line.978">  public synchronized double getAccelY() {</a>
+<span class="sourceLineNo">979</span><a id="line.979">    return m_accel_y * 9.81;</a>
+<span class="sourceLineNo">980</span><a id="line.980">  }</a>
+<span class="sourceLineNo">981</span><a id="line.981"></a>
+<span class="sourceLineNo">982</span><a id="line.982">  /** @return current acceleration in the Z axis */</a>
+<span class="sourceLineNo">983</span><a id="line.983">  public synchronized double getAccelZ() {</a>
+<span class="sourceLineNo">984</span><a id="line.984">    return 0.0;</a>
+<span class="sourceLineNo">985</span><a id="line.985">    //return m_accel_z * 9.81; EJM</a>
+<span class="sourceLineNo">986</span><a id="line.986">  }</a>
+<span class="sourceLineNo">987</span><a id="line.987"></a>
+<span class="sourceLineNo">988</span><a id="line.988">  /** @return current temperature */</a>
+<span class="sourceLineNo">989</span><a id="line.989">  public synchronized double getTemp() {</a>
+<span class="sourceLineNo">990</span><a id="line.990">    return m_temp;</a>
+<span class="sourceLineNo">991</span><a id="line.991">  }</a>
+<span class="sourceLineNo">992</span><a id="line.992"></a>
+<span class="sourceLineNo">993</span><a id="line.993">  /** @return X axis complementary angle */</a>
+<span class="sourceLineNo">994</span><a id="line.994">  public synchronized double getXComplementaryAngle() {</a>
+<span class="sourceLineNo">995</span><a id="line.995">    return m_compAngleX;</a>
+<span class="sourceLineNo">996</span><a id="line.996">  }</a>
+<span class="sourceLineNo">997</span><a id="line.997"></a>
+<span class="sourceLineNo">998</span><a id="line.998">  /** @return Y axis complementary angle */</a>
+<span class="sourceLineNo">999</span><a id="line.999">  public synchronized double getYComplementaryAngle() {</a>
+<span class="sourceLineNo">1000</span><a id="line.1000">    return m_compAngleY;</a>
+<span class="sourceLineNo">1001</span><a id="line.1001">  }</a>
+<span class="sourceLineNo">1002</span><a id="line.1002"></a>
+<span class="sourceLineNo">1003</span><a id="line.1003">  /** @return X axis filtered acceleration angle */</a>
+<span class="sourceLineNo">1004</span><a id="line.1004">  public synchronized double getXFilteredAccelAngle() {</a>
+<span class="sourceLineNo">1005</span><a id="line.1005">    return m_accelAngleX;</a>
+<span class="sourceLineNo">1006</span><a id="line.1006">  }</a>
+<span class="sourceLineNo">1007</span><a id="line.1007"></a>
+<span class="sourceLineNo">1008</span><a id="line.1008">  /** @return Y axis filtered acceleration angle */</a>
+<span class="sourceLineNo">1009</span><a id="line.1009">  public synchronized double getYFilteredAccelAngle() {</a>
+<span class="sourceLineNo">1010</span><a id="line.1010">    return m_accelAngleY;</a>
+<span class="sourceLineNo">1011</span><a id="line.1011">  }</a>
+<span class="sourceLineNo">1012</span><a id="line.1012"></a>
+<span class="sourceLineNo">1013</span><a id="line.1013">  /**</a>
+<span class="sourceLineNo">1014</span><a id="line.1014">   * Get the SPI port number.</a>
+<span class="sourceLineNo">1015</span><a id="line.1015">   *</a>
+<span class="sourceLineNo">1016</span><a id="line.1016">   * @return The SPI port number.</a>
+<span class="sourceLineNo">1017</span><a id="line.1017">   */</a>
+<span class="sourceLineNo">1018</span><a id="line.1018">  public int getPort() {</a>
+<span class="sourceLineNo">1019</span><a id="line.1019">    return m_spi_port.value;</a>
+<span class="sourceLineNo">1020</span><a id="line.1020">  }</a>
+<span class="sourceLineNo">1021</span><a id="line.1021"></a>
+<span class="sourceLineNo">1022</span><a id="line.1022">  @Override</a>
+<span class="sourceLineNo">1023</span><a id="line.1023">  public void initSendable(NTSendableBuilder builder) {</a>
+<span class="sourceLineNo">1024</span><a id="line.1024">    builder.setSmartDashboardType("Gyro");</a>
+<span class="sourceLineNo">1025</span><a id="line.1025">    builder.addDoubleProperty("Value", this::getAngle, null);</a>
+<span class="sourceLineNo">1026</span><a id="line.1026">  }</a>
+<span class="sourceLineNo">1027</span><a id="line.1027">}</a>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</pre>
+</div>
+</main>
+</body>
+</html>

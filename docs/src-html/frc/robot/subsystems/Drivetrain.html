@@ -1,0 +1,411 @@
+<!DOCTYPE HTML>
+<html lang="en">
+<head>
+<title>Source code</title>
+<link rel="stylesheet" type="text/css" href="../../../../stylesheet.css" title="Style">
+</head>
+<body>
+<main role="main">
+<div class="sourceContainer">
+<pre><span class="sourceLineNo">001</span><a id="line.1">package frc.robot.subsystems;</a>
+<span class="sourceLineNo">002</span><a id="line.2"></a>
+<span class="sourceLineNo">003</span><a id="line.3">import edu.wpi.first.math.geometry.Rotation2d;</a>
+<span class="sourceLineNo">004</span><a id="line.4">import edu.wpi.first.math.kinematics.ChassisSpeeds;</a>
+<span class="sourceLineNo">005</span><a id="line.5">import edu.wpi.first.math.kinematics.SwerveDriveKinematics;</a>
+<span class="sourceLineNo">006</span><a id="line.6">import edu.wpi.first.math.kinematics.SwerveDriveOdometry;</a>
+<span class="sourceLineNo">007</span><a id="line.7">import edu.wpi.first.math.kinematics.SwerveModuleState;</a>
+<span class="sourceLineNo">008</span><a id="line.8">import edu.wpi.first.util.datalog.BooleanLogEntry;</a>
+<span class="sourceLineNo">009</span><a id="line.9">import edu.wpi.first.util.datalog.DataLog;</a>
+<span class="sourceLineNo">010</span><a id="line.10">import edu.wpi.first.util.datalog.StringLogEntry;</a>
+<span class="sourceLineNo">011</span><a id="line.11">import edu.wpi.first.wpilibj.DataLogManager;</a>
+<span class="sourceLineNo">012</span><a id="line.12">import edu.wpi.first.wpilibj2.command.SubsystemBase;</a>
+<span class="sourceLineNo">013</span><a id="line.13">import frc.robot.Calibrations;</a>
+<span class="sourceLineNo">014</span><a id="line.14">import frc.robot.Constants;</a>
+<span class="sourceLineNo">015</span><a id="line.15">import frc.robot.lib.ADIS16470;</a>
+<span class="sourceLineNo">016</span><a id="line.16">import frc.robot.lib.SwerveModule;</a>
+<span class="sourceLineNo">017</span><a id="line.17"></a>
+<span class="sourceLineNo">018</span><a id="line.18">/**</a>
+<span class="sourceLineNo">019</span><a id="line.19"> * Implements the swerve drivetrain using REV/SparkMax, swerve MK4 modules, CTRE mag encoders, and an ADIS16470 IMU.</a>
+<span class="sourceLineNo">020</span><a id="line.20"> *</a>
+<span class="sourceLineNo">021</span><a id="line.21"> * @see &lt;a href="https://www.analog.com/media/en/technical-documentation/data-sheets/ADIS16470.pdf"&gt;ADIS16470 IMU Datasheet&lt;/a&gt;</a>
+<span class="sourceLineNo">022</span><a id="line.22"> */</a>
+<span class="sourceLineNo">023</span><a id="line.23">public class Drivetrain extends SubsystemBase {</a>
+<span class="sourceLineNo">024</span><a id="line.24"></a>
+<span class="sourceLineNo">025</span><a id="line.25">    /**</a>
+<span class="sourceLineNo">026</span><a id="line.26">     * The states of the drivetrain.</a>
+<span class="sourceLineNo">027</span><a id="line.27">     *</a>
+<span class="sourceLineNo">028</span><a id="line.28">     * &lt;p&gt;Commands are responsible for setting the state of the drivetrain and are defined as follows:</a>
+<span class="sourceLineNo">029</span><a id="line.29">     *</a>
+<span class="sourceLineNo">030</span><a id="line.30">     * &lt;p&gt;&lt;b&gt;Idle&lt;/b&gt; - There are no commands currently using the subsystem.</a>
+<span class="sourceLineNo">031</span><a id="line.31">     *</a>
+<span class="sourceLineNo">032</span><a id="line.32">     * &lt;p&gt;&lt;b&gt;Driving&lt;/b&gt; - The driver is controlling the robot.</a>
+<span class="sourceLineNo">033</span><a id="line.33">     *</a>
+<span class="sourceLineNo">034</span><a id="line.34">     * &lt;p&gt;&lt;b&gt;PathFollowing&lt;/b&gt; - The robot is following a path.</a>
+<span class="sourceLineNo">035</span><a id="line.35">     *</a>
+<span class="sourceLineNo">036</span><a id="line.36">     * &lt;p&gt;&lt;b&gt;Calibrating&lt;/b&gt; - The robot is running a calibration command.</a>
+<span class="sourceLineNo">037</span><a id="line.37">     */</a>
+<span class="sourceLineNo">038</span><a id="line.38">    public enum StateType {</a>
+<span class="sourceLineNo">039</span><a id="line.39">        Idle {</a>
+<span class="sourceLineNo">040</span><a id="line.40">            @Override</a>
+<span class="sourceLineNo">041</span><a id="line.41">            public String toString() {</a>
+<span class="sourceLineNo">042</span><a id="line.42">                return "Idle";</a>
+<span class="sourceLineNo">043</span><a id="line.43">            }</a>
+<span class="sourceLineNo">044</span><a id="line.44">        },</a>
+<span class="sourceLineNo">045</span><a id="line.45">        Driving {</a>
+<span class="sourceLineNo">046</span><a id="line.46">            @Override</a>
+<span class="sourceLineNo">047</span><a id="line.47">            public String toString() {</a>
+<span class="sourceLineNo">048</span><a id="line.48">                return "Driving";</a>
+<span class="sourceLineNo">049</span><a id="line.49">            }</a>
+<span class="sourceLineNo">050</span><a id="line.50">        },</a>
+<span class="sourceLineNo">051</span><a id="line.51">        PathFollowing {</a>
+<span class="sourceLineNo">052</span><a id="line.52">            @Override</a>
+<span class="sourceLineNo">053</span><a id="line.53">            public String toString() {</a>
+<span class="sourceLineNo">054</span><a id="line.54">                return "Path Following";</a>
+<span class="sourceLineNo">055</span><a id="line.55">            }</a>
+<span class="sourceLineNo">056</span><a id="line.56">        },</a>
+<span class="sourceLineNo">057</span><a id="line.57">        Calibrating {</a>
+<span class="sourceLineNo">058</span><a id="line.58">            @Override</a>
+<span class="sourceLineNo">059</span><a id="line.59">            public String toString() {</a>
+<span class="sourceLineNo">060</span><a id="line.60">                return "Calibrating";</a>
+<span class="sourceLineNo">061</span><a id="line.61">            }</a>
+<span class="sourceLineNo">062</span><a id="line.62">        },</a>
+<span class="sourceLineNo">063</span><a id="line.63">    }</a>
+<span class="sourceLineNo">064</span><a id="line.64"></a>
+<span class="sourceLineNo">065</span><a id="line.65">    private final SwerveModule[] m_modules;</a>
+<span class="sourceLineNo">066</span><a id="line.66">    private final SwerveDriveKinematics m_kinematics;</a>
+<span class="sourceLineNo">067</span><a id="line.67">    private final ADIS16470 m_imu;</a>
+<span class="sourceLineNo">068</span><a id="line.68">    private final SwerveDriveOdometry m_odometry;</a>
+<span class="sourceLineNo">069</span><a id="line.69">    private final DataLog m_log;</a>
+<span class="sourceLineNo">070</span><a id="line.70">    private SwerveModuleState[] m_currentModulesState;</a>
+<span class="sourceLineNo">071</span><a id="line.71">    private SwerveModuleState[] m_desiredModulesState;</a>
+<span class="sourceLineNo">072</span><a id="line.72">    private ChassisSpeeds m_chassisSpeeds;</a>
+<span class="sourceLineNo">073</span><a id="line.73">    private boolean m_isFieldOriented;</a>
+<span class="sourceLineNo">074</span><a id="line.74">    private Rotation2d m_imuYawAngleRot2D;</a>
+<span class="sourceLineNo">075</span><a id="line.75">    private StateType m_currentState;</a>
+<span class="sourceLineNo">076</span><a id="line.76">    private StringLogEntry m_stateLogEntry;</a>
+<span class="sourceLineNo">077</span><a id="line.77">    private BooleanLogEntry m_fieldOrientedLogEntry;</a>
+<span class="sourceLineNo">078</span><a id="line.78"></a>
+<span class="sourceLineNo">079</span><a id="line.79"></a>
+<span class="sourceLineNo">080</span><a id="line.80">    //--------------------------------------------------------------------------------------------------------------------//</a>
+<span class="sourceLineNo">081</span><a id="line.81">    /*                                                   PUBLIC METHODS                                                   */</a>
+<span class="sourceLineNo">082</span><a id="line.82">    //--------------------------------------------------------------------------------------------------------------------//</a>
+<span class="sourceLineNo">083</span><a id="line.83"></a>
+<span class="sourceLineNo">084</span><a id="line.84"></a>
+<span class="sourceLineNo">085</span><a id="line.85">    /**</a>
+<span class="sourceLineNo">086</span><a id="line.86">     * Set the state of the swerve modules to perform the desired auto/teleop command.</a>
+<span class="sourceLineNo">087</span><a id="line.87">     *</a>
+<span class="sourceLineNo">088</span><a id="line.88">     * @param speedX the translational speed along the X-axis</a>
+<span class="sourceLineNo">089</span><a id="line.89">     * @param speedY the translational speed along the Y-axis</a>
+<span class="sourceLineNo">090</span><a id="line.90">     * @param speedRot the rotational speed about the Z-axis</a>
+<span class="sourceLineNo">091</span><a id="line.91">     */</a>
+<span class="sourceLineNo">092</span><a id="line.92">    public void setDesiredModulesState(double speedX, double speedY, double speedRot) {</a>
+<span class="sourceLineNo">093</span><a id="line.93">        if (m_isFieldOriented) {</a>
+<span class="sourceLineNo">094</span><a id="line.94">            m_chassisSpeeds = ChassisSpeeds.fromFieldRelativeSpeeds(speedX, speedY, speedRot, m_imuYawAngleRot2D);</a>
+<span class="sourceLineNo">095</span><a id="line.95">        } else {</a>
+<span class="sourceLineNo">096</span><a id="line.96">            m_chassisSpeeds = new ChassisSpeeds(speedX, speedY, speedRot);</a>
+<span class="sourceLineNo">097</span><a id="line.97">        }</a>
+<span class="sourceLineNo">098</span><a id="line.98">        m_desiredModulesState = m_kinematics.toSwerveModuleStates(m_chassisSpeeds);</a>
+<span class="sourceLineNo">099</span><a id="line.99"></a>
+<span class="sourceLineNo">100</span><a id="line.100">        SwerveDriveKinematics.desaturateWheelSpeeds(m_desiredModulesState, Calibrations.MAX_DRIVE_VELOCITY_MPS);</a>
+<span class="sourceLineNo">101</span><a id="line.101">        for (int i = 0; i &lt; Constants.Drivetrain.numModules; i++) {</a>
+<span class="sourceLineNo">102</span><a id="line.102">            m_modules[i].setDesiredState(m_desiredModulesState[i]);</a>
+<span class="sourceLineNo">103</span><a id="line.103">        }</a>
+<span class="sourceLineNo">104</span><a id="line.104">    }</a>
+<span class="sourceLineNo">105</span><a id="line.105"></a>
+<span class="sourceLineNo">106</span><a id="line.106"></a>
+<span class="sourceLineNo">107</span><a id="line.107">    /**</a>
+<span class="sourceLineNo">108</span><a id="line.108">     * Set offset of the modules azimuth angle by using the input absolute "home" angle and the current angle read from the</a>
+<span class="sourceLineNo">109</span><a id="line.109">     * duty cycle endcoder.</a>
+<span class="sourceLineNo">110</span><a id="line.110">     */</a>
+<span class="sourceLineNo">111</span><a id="line.111">    public void setHomeOffsets() {</a>
+<span class="sourceLineNo">112</span><a id="line.112">        for (int i = 0; i &lt; Constants.Drivetrain.numModules; i++) {</a>
+<span class="sourceLineNo">113</span><a id="line.113">            m_modules[i].setHomeOffset(Calibrations.ZEROS_RAD[i]);</a>
+<span class="sourceLineNo">114</span><a id="line.114">        }</a>
+<span class="sourceLineNo">115</span><a id="line.115">    }</a>
+<span class="sourceLineNo">116</span><a id="line.116"></a>
+<span class="sourceLineNo">117</span><a id="line.117"></a>
+<span class="sourceLineNo">118</span><a id="line.118">    /**</a>
+<span class="sourceLineNo">119</span><a id="line.119">     * Set all of the swerve module motor outputs to 0 volts.</a>
+<span class="sourceLineNo">120</span><a id="line.120">     */</a>
+<span class="sourceLineNo">121</span><a id="line.121">    public void setIdleModules() {</a>
+<span class="sourceLineNo">122</span><a id="line.122">        for (int i = 0; i &lt; Constants.Drivetrain.numModules; i++) {</a>
+<span class="sourceLineNo">123</span><a id="line.123">            m_modules[i].setIdle();</a>
+<span class="sourceLineNo">124</span><a id="line.124">        }</a>
+<span class="sourceLineNo">125</span><a id="line.125">    }</a>
+<span class="sourceLineNo">126</span><a id="line.126"></a>
+<span class="sourceLineNo">127</span><a id="line.127"></a>
+<span class="sourceLineNo">128</span><a id="line.128">    /**</a>
+<span class="sourceLineNo">129</span><a id="line.129">     * Sets the commanded voltage of the turn motors.</a>
+<span class="sourceLineNo">130</span><a id="line.130">     *</a>
+<span class="sourceLineNo">131</span><a id="line.131">     * @param voltage the voltage input of the motors</a>
+<span class="sourceLineNo">132</span><a id="line.132">     */</a>
+<span class="sourceLineNo">133</span><a id="line.133">    public void setModulesTurnVoltage(double voltage) {</a>
+<span class="sourceLineNo">134</span><a id="line.134">        for (int i = 0; i &lt; Constants.Drivetrain.numModules; i++) {</a>
+<span class="sourceLineNo">135</span><a id="line.135">            m_modules[i].setTurnVoltage(voltage);</a>
+<span class="sourceLineNo">136</span><a id="line.136">        }</a>
+<span class="sourceLineNo">137</span><a id="line.137">    }</a>
+<span class="sourceLineNo">138</span><a id="line.138"></a>
+<span class="sourceLineNo">139</span><a id="line.139"></a>
+<span class="sourceLineNo">140</span><a id="line.140">    /**</a>
+<span class="sourceLineNo">141</span><a id="line.141">     * Sets the commanded voltage of the drive motors.</a>
+<span class="sourceLineNo">142</span><a id="line.142">     *</a>
+<span class="sourceLineNo">143</span><a id="line.143">     * @param voltage the voltage input of the motors</a>
+<span class="sourceLineNo">144</span><a id="line.144">     */</a>
+<span class="sourceLineNo">145</span><a id="line.145">    public void setModulesDriveVoltage(double voltage) {</a>
+<span class="sourceLineNo">146</span><a id="line.146">        for (int i = 0; i &lt; Constants.Drivetrain.numModules; i++) {</a>
+<span class="sourceLineNo">147</span><a id="line.147">            m_modules[i].setDriveVoltage(voltage);</a>
+<span class="sourceLineNo">148</span><a id="line.148">        }</a>
+<span class="sourceLineNo">149</span><a id="line.149">    }</a>
+<span class="sourceLineNo">150</span><a id="line.150"></a>
+<span class="sourceLineNo">151</span><a id="line.151"></a>
+<span class="sourceLineNo">152</span><a id="line.152">    /**</a>
+<span class="sourceLineNo">153</span><a id="line.153">     * Set the idle mode of the modules motors.</a>
+<span class="sourceLineNo">154</span><a id="line.154">     *</a>
+<span class="sourceLineNo">155</span><a id="line.155">     * @param isBrakeDesired true sets brake mode, false sets coast mode</a>
+<span class="sourceLineNo">156</span><a id="line.156">     */</a>
+<span class="sourceLineNo">157</span><a id="line.157">    public void setModulesIdleMode(boolean isBrakeDesired) {</a>
+<span class="sourceLineNo">158</span><a id="line.158">        for (int i = 0; i &lt; Constants.Drivetrain.numModules; i++) {</a>
+<span class="sourceLineNo">159</span><a id="line.159">            m_modules[i].setIdleMode(isBrakeDesired);</a>
+<span class="sourceLineNo">160</span><a id="line.160">        }</a>
+<span class="sourceLineNo">161</span><a id="line.161">    }</a>
+<span class="sourceLineNo">162</span><a id="line.162"></a>
+<span class="sourceLineNo">163</span><a id="line.163">    /**</a>
+<span class="sourceLineNo">164</span><a id="line.164">     * Set the drive encoder postion to 0 for all modules.</a>
+<span class="sourceLineNo">165</span><a id="line.165">     */</a>
+<span class="sourceLineNo">166</span><a id="line.166">    public void resetModulesDriveEncoder() {</a>
+<span class="sourceLineNo">167</span><a id="line.167">        for (int i = 0; i &lt; Constants.Drivetrain.numModules; i++) {</a>
+<span class="sourceLineNo">168</span><a id="line.168">            m_modules[i].resetDriveEncoder();</a>
+<span class="sourceLineNo">169</span><a id="line.169">        }</a>
+<span class="sourceLineNo">170</span><a id="line.170">    }</a>
+<span class="sourceLineNo">171</span><a id="line.171"></a>
+<span class="sourceLineNo">172</span><a id="line.172"></a>
+<span class="sourceLineNo">173</span><a id="line.173">    /**</a>
+<span class="sourceLineNo">174</span><a id="line.174">     * Get the offset of the modules azimuth angle.</a>
+<span class="sourceLineNo">175</span><a id="line.175">     *</a>
+<span class="sourceLineNo">176</span><a id="line.176">     * @return the home offsets in radians</a>
+<span class="sourceLineNo">177</span><a id="line.177">     */</a>
+<span class="sourceLineNo">178</span><a id="line.178">    public double[] getHomeOffsets() {</a>
+<span class="sourceLineNo">179</span><a id="line.179">        double[] homeOffsets = new double[Constants.Drivetrain.numModules];</a>
+<span class="sourceLineNo">180</span><a id="line.180">        for (int i = 0; i &lt; Constants.Drivetrain.numModules; i++) {</a>
+<span class="sourceLineNo">181</span><a id="line.181">            homeOffsets[i] = m_modules[i].getHomeOffset();</a>
+<span class="sourceLineNo">182</span><a id="line.182">        }</a>
+<span class="sourceLineNo">183</span><a id="line.183">        return homeOffsets;</a>
+<span class="sourceLineNo">184</span><a id="line.184">    }</a>
+<span class="sourceLineNo">185</span><a id="line.185"></a>
+<span class="sourceLineNo">186</span><a id="line.186"></a>
+<span class="sourceLineNo">187</span><a id="line.187">    /**</a>
+<span class="sourceLineNo">188</span><a id="line.188">     * Get the drive encoder postion for all modules in their native units of rotations.</a>
+<span class="sourceLineNo">189</span><a id="line.189">     *</a>
+<span class="sourceLineNo">190</span><a id="line.190">     * @return the rotations of the swerve drive encoders</a>
+<span class="sourceLineNo">191</span><a id="line.191">     */</a>
+<span class="sourceLineNo">192</span><a id="line.192">    public double[] getModulesDriveRotations() {</a>
+<span class="sourceLineNo">193</span><a id="line.193">        double[] rotations = new double[Constants.Drivetrain.numModules];</a>
+<span class="sourceLineNo">194</span><a id="line.194">        for (int i = 0; i &lt; Constants.Drivetrain.numModules; i++) {</a>
+<span class="sourceLineNo">195</span><a id="line.195">            rotations[i] = m_modules[i].getDriveEncPosRot();</a>
+<span class="sourceLineNo">196</span><a id="line.196">        }</a>
+<span class="sourceLineNo">197</span><a id="line.197">        return rotations;</a>
+<span class="sourceLineNo">198</span><a id="line.198">    }</a>
+<span class="sourceLineNo">199</span><a id="line.199"></a>
+<span class="sourceLineNo">200</span><a id="line.200"></a>
+<span class="sourceLineNo">201</span><a id="line.201">    /**</a>
+<span class="sourceLineNo">202</span><a id="line.202">     * Update the state of the drivetrain.</a>
+<span class="sourceLineNo">203</span><a id="line.203">     *</a>
+<span class="sourceLineNo">204</span><a id="line.204">     * &lt;p&gt;The state will be updated by the commands which use the drivetrain subsystem.</a>
+<span class="sourceLineNo">205</span><a id="line.205">     *</a>
+<span class="sourceLineNo">206</span><a id="line.206">     * @param state the drivetrain state</a>
+<span class="sourceLineNo">207</span><a id="line.207">     */</a>
+<span class="sourceLineNo">208</span><a id="line.208">    public void updateState(StateType state) {</a>
+<span class="sourceLineNo">209</span><a id="line.209">        m_currentState = state;</a>
+<span class="sourceLineNo">210</span><a id="line.210">    }</a>
+<span class="sourceLineNo">211</span><a id="line.211"></a>
+<span class="sourceLineNo">212</span><a id="line.212"></a>
+<span class="sourceLineNo">213</span><a id="line.213">    /**</a>
+<span class="sourceLineNo">214</span><a id="line.214">     * Toggle whether the drive commands are field oriented or robot oriented.</a>
+<span class="sourceLineNo">215</span><a id="line.215">     */</a>
+<span class="sourceLineNo">216</span><a id="line.216">    public void toggleFieldOriented() {</a>
+<span class="sourceLineNo">217</span><a id="line.217">        m_isFieldOriented = !m_isFieldOriented;</a>
+<span class="sourceLineNo">218</span><a id="line.218">    }</a>
+<span class="sourceLineNo">219</span><a id="line.219"></a>
+<span class="sourceLineNo">220</span><a id="line.220">    /**</a>
+<span class="sourceLineNo">221</span><a id="line.221">     * Get the drive command orientation.</a>
+<span class="sourceLineNo">222</span><a id="line.222">     *</a>
+<span class="sourceLineNo">223</span><a id="line.223">     * @return if driving is field oriented</a>
+<span class="sourceLineNo">224</span><a id="line.224">     */</a>
+<span class="sourceLineNo">225</span><a id="line.225">    public boolean isFieldOriented() {</a>
+<span class="sourceLineNo">226</span><a id="line.226">        return m_isFieldOriented;</a>
+<span class="sourceLineNo">227</span><a id="line.227">    }</a>
+<span class="sourceLineNo">228</span><a id="line.228"></a>
+<span class="sourceLineNo">229</span><a id="line.229"></a>
+<span class="sourceLineNo">230</span><a id="line.230">    /**</a>
+<span class="sourceLineNo">231</span><a id="line.231">     * Get the yaw angle of the IMU.</a>
+<span class="sourceLineNo">232</span><a id="line.232">     *</a>
+<span class="sourceLineNo">233</span><a id="line.233">     * @return the IMU yaw angle in degrees</a>
+<span class="sourceLineNo">234</span><a id="line.234">     */</a>
+<span class="sourceLineNo">235</span><a id="line.235">    public double getImuYawAngleDeg() {</a>
+<span class="sourceLineNo">236</span><a id="line.236">        return m_imu.getAngle();</a>
+<span class="sourceLineNo">237</span><a id="line.237">    }</a>
+<span class="sourceLineNo">238</span><a id="line.238"></a>
+<span class="sourceLineNo">239</span><a id="line.239">    /**</a>
+<span class="sourceLineNo">240</span><a id="line.240">     * Get the die temp of the IMU.</a>
+<span class="sourceLineNo">241</span><a id="line.241">     *</a>
+<span class="sourceLineNo">242</span><a id="line.242">     * @return the IMU die temp in degrees celcius</a>
+<span class="sourceLineNo">243</span><a id="line.243">     */</a>
+<span class="sourceLineNo">244</span><a id="line.244">    public double getImuTempDegC() {</a>
+<span class="sourceLineNo">245</span><a id="line.245">        return m_imu.getTemp();</a>
+<span class="sourceLineNo">246</span><a id="line.246">    }</a>
+<span class="sourceLineNo">247</span><a id="line.247"></a>
+<span class="sourceLineNo">248</span><a id="line.248"></a>
+<span class="sourceLineNo">249</span><a id="line.249">    //--------------------------------------------------------------------------------------------------------------------//</a>
+<span class="sourceLineNo">250</span><a id="line.250">    /*                                                  PRIVATE METHODS                                                   */</a>
+<span class="sourceLineNo">251</span><a id="line.251">    //--------------------------------------------------------------------------------------------------------------------//</a>
+<span class="sourceLineNo">252</span><a id="line.252"></a>
+<span class="sourceLineNo">253</span><a id="line.253"></a>
+<span class="sourceLineNo">254</span><a id="line.254">    /**</a>
+<span class="sourceLineNo">255</span><a id="line.255">     * Log the telemetry data to disk using the WPILib logger.</a>
+<span class="sourceLineNo">256</span><a id="line.256">     */</a>
+<span class="sourceLineNo">257</span><a id="line.257">    private void logTelemetry() {</a>
+<span class="sourceLineNo">258</span><a id="line.258">        if (Constants.Drivetrain.ENABLE_LOGGING) {</a>
+<span class="sourceLineNo">259</span><a id="line.259">            m_stateLogEntry.append(m_currentState.toString());</a>
+<span class="sourceLineNo">260</span><a id="line.260">            m_fieldOrientedLogEntry.append(isFieldOriented());</a>
+<span class="sourceLineNo">261</span><a id="line.261">        }</a>
+<span class="sourceLineNo">262</span><a id="line.262">    }</a>
+<span class="sourceLineNo">263</span><a id="line.263"></a>
+<span class="sourceLineNo">264</span><a id="line.264">    /**</a>
+<span class="sourceLineNo">265</span><a id="line.265">     * Log the telemetry data for all modules.</a>
+<span class="sourceLineNo">266</span><a id="line.266">     */</a>
+<span class="sourceLineNo">267</span><a id="line.267">    private void logModulesTelemetry() {</a>
+<span class="sourceLineNo">268</span><a id="line.268">        for (int i = 0; i &lt; Constants.Drivetrain.numModules; i++) {</a>
+<span class="sourceLineNo">269</span><a id="line.269">            m_modules[i].logTelemetry();</a>
+<span class="sourceLineNo">270</span><a id="line.270">        }</a>
+<span class="sourceLineNo">271</span><a id="line.271">    }</a>
+<span class="sourceLineNo">272</span><a id="line.272"></a>
+<span class="sourceLineNo">273</span><a id="line.273">    //--------------------------------------------------------------------------------------------------------------------//</a>
+<span class="sourceLineNo">274</span><a id="line.274">    /*                                         CONSTRUCTOR AND PERIODIC METHODS                                           */</a>
+<span class="sourceLineNo">275</span><a id="line.275">    //--------------------------------------------------------------------------------------------------------------------//</a>
+<span class="sourceLineNo">276</span><a id="line.276"></a>
+<span class="sourceLineNo">277</span><a id="line.277"></a>
+<span class="sourceLineNo">278</span><a id="line.278">    /** </a>
+<span class="sourceLineNo">279</span><a id="line.279">     * Constructor for the drivetrain.</a>
+<span class="sourceLineNo">280</span><a id="line.280">     */</a>
+<span class="sourceLineNo">281</span><a id="line.281">    public Drivetrain() {</a>
+<span class="sourceLineNo">282</span><a id="line.282">        m_modules = new SwerveModule[Constants.Drivetrain.numModules];</a>
+<span class="sourceLineNo">283</span><a id="line.283">        m_desiredModulesState = new SwerveModuleState[Constants.Drivetrain.numModules];</a>
+<span class="sourceLineNo">284</span><a id="line.284">        m_currentModulesState = new SwerveModuleState[Constants.Drivetrain.numModules];</a>
+<span class="sourceLineNo">285</span><a id="line.285">        for (int i = 0; i &lt; Constants.Drivetrain.numModules; i++) {</a>
+<span class="sourceLineNo">286</span><a id="line.286">            m_modules[i] = new SwerveModule(Constants.Drivetrain.MODULE_LABELS[i],</a>
+<span class="sourceLineNo">287</span><a id="line.287">                                            Constants.Drivetrain.TURN_IDS[i],</a>
+<span class="sourceLineNo">288</span><a id="line.288">                                            Constants.Drivetrain.DRIVE_IDS[i],</a>
+<span class="sourceLineNo">289</span><a id="line.289">                                            Constants.Drivetrain.PWM_DIO_CHANNELS[i],</a>
+<span class="sourceLineNo">290</span><a id="line.290">                                            Constants.Drivetrain.QUAD_A_DIO_CHANNELS[i],</a>
+<span class="sourceLineNo">291</span><a id="line.291">                                            Constants.Drivetrain.QUAD_B_DIO_CHANNELS[i],</a>
+<span class="sourceLineNo">292</span><a id="line.292">                                            Calibrations.MAX_TURN_VELOCITY_RPS[i],</a>
+<span class="sourceLineNo">293</span><a id="line.293">                                            Calibrations.MAX_TURN_ACCELERATION_RPSS[i],</a>
+<span class="sourceLineNo">294</span><a id="line.294">                                            Calibrations.TURN_FF_KS_GAIN[i],</a>
+<span class="sourceLineNo">295</span><a id="line.295">                                            Calibrations.TURN_FF_KV_GAIN[i],</a>
+<span class="sourceLineNo">296</span><a id="line.296">                                            Calibrations.TURN_FF_KA_GAIN[i],</a>
+<span class="sourceLineNo">297</span><a id="line.297">                                            Calibrations.DRIVE_FF_KS_GAIN[i],</a>
+<span class="sourceLineNo">298</span><a id="line.298">                                            Calibrations.DRIVE_FF_KV_GAIN[i],</a>
+<span class="sourceLineNo">299</span><a id="line.299">                                            Calibrations.DRIVE_FF_KA_GAIN[i]);</a>
+<span class="sourceLineNo">300</span><a id="line.300">            m_desiredModulesState[i] = new SwerveModuleState(0.0, new Rotation2d());</a>
+<span class="sourceLineNo">301</span><a id="line.301">            m_currentModulesState[i] = m_modules[i].getCurrentState();</a>
+<span class="sourceLineNo">302</span><a id="line.302">        }</a>
+<span class="sourceLineNo">303</span><a id="line.303">        m_kinematics = new SwerveDriveKinematics(Constants.Drivetrain.MODULE_LOCATIONS);</a>
+<span class="sourceLineNo">304</span><a id="line.304">        m_imu = new ADIS16470();</a>
+<span class="sourceLineNo">305</span><a id="line.305">        m_odometry = new SwerveDriveOdometry(m_kinematics, Rotation2d.fromDegrees(0.0));</a>
+<span class="sourceLineNo">306</span><a id="line.306">        m_chassisSpeeds = new ChassisSpeeds(0.0, 0.0, 0.0);</a>
+<span class="sourceLineNo">307</span><a id="line.307">        m_currentState = StateType.Idle;</a>
+<span class="sourceLineNo">308</span><a id="line.308">        m_isFieldOriented = true;</a>
+<span class="sourceLineNo">309</span><a id="line.309">        m_imuYawAngleRot2D = new Rotation2d();</a>
+<span class="sourceLineNo">310</span><a id="line.310"></a>
+<span class="sourceLineNo">311</span><a id="line.311">        if (Constants.Drivetrain.ENABLE_LOGGING) {</a>
+<span class="sourceLineNo">312</span><a id="line.312">            m_log = DataLogManager.getLog();</a>
+<span class="sourceLineNo">313</span><a id="line.313">            m_stateLogEntry = new StringLogEntry(m_log, "Drivetrain State");</a>
+<span class="sourceLineNo">314</span><a id="line.314">            m_fieldOrientedLogEntry = new BooleanLogEntry(m_log, "Is Field Oriented");</a>
+<span class="sourceLineNo">315</span><a id="line.315">        } else {</a>
+<span class="sourceLineNo">316</span><a id="line.316">            m_log = null;</a>
+<span class="sourceLineNo">317</span><a id="line.317">            m_stateLogEntry = null;</a>
+<span class="sourceLineNo">318</span><a id="line.318">            m_fieldOrientedLogEntry = null;</a>
+<span class="sourceLineNo">319</span><a id="line.319">        }</a>
+<span class="sourceLineNo">320</span><a id="line.320">    }</a>
+<span class="sourceLineNo">321</span><a id="line.321"></a>
+<span class="sourceLineNo">322</span><a id="line.322"></a>
+<span class="sourceLineNo">323</span><a id="line.323">    /**</a>
+<span class="sourceLineNo">324</span><a id="line.324">     * This method is called periodically by the command scheduler and is run before any of the commands are serviced.</a>
+<span class="sourceLineNo">325</span><a id="line.325">     */</a>
+<span class="sourceLineNo">326</span><a id="line.326">    @Override </a>
+<span class="sourceLineNo">327</span><a id="line.327">    public void periodic() {</a>
+<span class="sourceLineNo">328</span><a id="line.328">        m_imuYawAngleRot2D =  Rotation2d.fromDegrees(m_imu.getAngle());</a>
+<span class="sourceLineNo">329</span><a id="line.329">        for (int i = 0; i &lt; Constants.Drivetrain.numModules; i++) {</a>
+<span class="sourceLineNo">330</span><a id="line.330">            m_currentModulesState[i] = m_modules[i].getCurrentState();</a>
+<span class="sourceLineNo">331</span><a id="line.331">        }</a>
+<span class="sourceLineNo">332</span><a id="line.332">        m_odometry.update(m_imuYawAngleRot2D, m_currentModulesState);</a>
+<span class="sourceLineNo">333</span><a id="line.333">        logModulesTelemetry();</a>
+<span class="sourceLineNo">334</span><a id="line.334">        logTelemetry();</a>
+<span class="sourceLineNo">335</span><a id="line.335">    }</a>
+<span class="sourceLineNo">336</span><a id="line.336"></a>
+<span class="sourceLineNo">337</span><a id="line.337">}</a>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</pre>
+</div>
+</main>
+</body>
+</html>

@@ -1,0 +1,258 @@
+<!DOCTYPE HTML>
+<html lang="en">
+<head>
+<title>Source code</title>
+<link rel="stylesheet" type="text/css" href="../../../../stylesheet.css" title="Style">
+</head>
+<body>
+<main role="main">
+<div class="sourceContainer">
+<pre><span class="sourceLineNo">001</span><a id="line.1">package frc.robot.subsystems;</a>
+<span class="sourceLineNo">002</span><a id="line.2"></a>
+<span class="sourceLineNo">003</span><a id="line.3">import com.revrobotics.CANSparkMax;</a>
+<span class="sourceLineNo">004</span><a id="line.4">import com.revrobotics.CANSparkMax.IdleMode;</a>
+<span class="sourceLineNo">005</span><a id="line.5">import com.revrobotics.CANSparkMaxLowLevel.MotorType;</a>
+<span class="sourceLineNo">006</span><a id="line.6">import com.revrobotics.RelativeEncoder;</a>
+<span class="sourceLineNo">007</span><a id="line.7">import com.revrobotics.SparkMaxPIDController;</a>
+<span class="sourceLineNo">008</span><a id="line.8">import edu.wpi.first.util.datalog.DataLog;</a>
+<span class="sourceLineNo">009</span><a id="line.9">import edu.wpi.first.util.datalog.DoubleLogEntry;</a>
+<span class="sourceLineNo">010</span><a id="line.10">import edu.wpi.first.util.datalog.StringLogEntry;</a>
+<span class="sourceLineNo">011</span><a id="line.11">import edu.wpi.first.wpilibj.DataLogManager;</a>
+<span class="sourceLineNo">012</span><a id="line.12">import edu.wpi.first.wpilibj.PneumaticsModuleType;</a>
+<span class="sourceLineNo">013</span><a id="line.13">import edu.wpi.first.wpilibj.Solenoid;</a>
+<span class="sourceLineNo">014</span><a id="line.14">import edu.wpi.first.wpilibj2.command.SubsystemBase;</a>
+<span class="sourceLineNo">015</span><a id="line.15">import frc.robot.Calibrations;</a>
+<span class="sourceLineNo">016</span><a id="line.16">import frc.robot.Constants;</a>
+<span class="sourceLineNo">017</span><a id="line.17"></a>
+<span class="sourceLineNo">018</span><a id="line.18">/**</a>
+<span class="sourceLineNo">019</span><a id="line.19"> * Implements the intake with a NEO 550 and 3:1 reduction.</a>
+<span class="sourceLineNo">020</span><a id="line.20"> */</a>
+<span class="sourceLineNo">021</span><a id="line.21">public class Intake extends SubsystemBase {</a>
+<span class="sourceLineNo">022</span><a id="line.22"></a>
+<span class="sourceLineNo">023</span><a id="line.23">    /**</a>
+<span class="sourceLineNo">024</span><a id="line.24">     * The states of the intake.</a>
+<span class="sourceLineNo">025</span><a id="line.25">     * </a>
+<span class="sourceLineNo">026</span><a id="line.26">     * &lt;p&gt;Commands are responsible for setting the state of the tower and are defined as follows:</a>
+<span class="sourceLineNo">027</span><a id="line.27">     *</a>
+<span class="sourceLineNo">028</span><a id="line.28">     * &lt;p&gt;&lt;b&gt;Idle&lt;/b&gt; - There are no commands currently using the subsystem.</a>
+<span class="sourceLineNo">029</span><a id="line.29">     *</a>
+<span class="sourceLineNo">030</span><a id="line.30">     * &lt;p&gt;&lt;b&gt;Retracted&lt;/b&gt; - the intake is retracted the motor is spun down.</a>
+<span class="sourceLineNo">031</span><a id="line.31">     *</a>
+<span class="sourceLineNo">032</span><a id="line.32">     * &lt;p&gt;&lt;b&gt;Extended&lt;/b&gt; - The intake is extended and the motor is spun up.</a>
+<span class="sourceLineNo">033</span><a id="line.33">     */</a>
+<span class="sourceLineNo">034</span><a id="line.34">    public enum StateType {</a>
+<span class="sourceLineNo">035</span><a id="line.35">        Idle { </a>
+<span class="sourceLineNo">036</span><a id="line.36">            @Override</a>
+<span class="sourceLineNo">037</span><a id="line.37">            public String toString() {</a>
+<span class="sourceLineNo">038</span><a id="line.38">                return "Idle";</a>
+<span class="sourceLineNo">039</span><a id="line.39">            }</a>
+<span class="sourceLineNo">040</span><a id="line.40">        },</a>
+<span class="sourceLineNo">041</span><a id="line.41">        Retracted { </a>
+<span class="sourceLineNo">042</span><a id="line.42">            @Override</a>
+<span class="sourceLineNo">043</span><a id="line.43">            public String toString() {</a>
+<span class="sourceLineNo">044</span><a id="line.44">                return "Retracted";</a>
+<span class="sourceLineNo">045</span><a id="line.45">            }</a>
+<span class="sourceLineNo">046</span><a id="line.46">        },</a>
+<span class="sourceLineNo">047</span><a id="line.47">        Extended {</a>
+<span class="sourceLineNo">048</span><a id="line.48">            @Override</a>
+<span class="sourceLineNo">049</span><a id="line.49">            public String toString() {</a>
+<span class="sourceLineNo">050</span><a id="line.50">                return "Extended";</a>
+<span class="sourceLineNo">051</span><a id="line.51">            }</a>
+<span class="sourceLineNo">052</span><a id="line.52">        },</a>
+<span class="sourceLineNo">053</span><a id="line.53">    }</a>
+<span class="sourceLineNo">054</span><a id="line.54"></a>
+<span class="sourceLineNo">055</span><a id="line.55">    private final CANSparkMax m_motor;</a>
+<span class="sourceLineNo">056</span><a id="line.56">    private SparkMaxPIDController m_pidController;</a>
+<span class="sourceLineNo">057</span><a id="line.57">    private RelativeEncoder m_encoder;</a>
+<span class="sourceLineNo">058</span><a id="line.58">    private final Solenoid m_solenoid;</a>
+<span class="sourceLineNo">059</span><a id="line.59">    private final DataLog m_log;</a>
+<span class="sourceLineNo">060</span><a id="line.60">    private StateType m_currentState;</a>
+<span class="sourceLineNo">061</span><a id="line.61">    private DoubleLogEntry m_rollerLinearVelocityMps;</a>
+<span class="sourceLineNo">062</span><a id="line.62">    private StringLogEntry m_stateLogEntry;</a>
+<span class="sourceLineNo">063</span><a id="line.63"></a>
+<span class="sourceLineNo">064</span><a id="line.64"></a>
+<span class="sourceLineNo">065</span><a id="line.65">    //--------------------------------------------------------------------------------------------------------------------//</a>
+<span class="sourceLineNo">066</span><a id="line.66">    /*                                                   PUBLIC METHODS                                                   */</a>
+<span class="sourceLineNo">067</span><a id="line.67">    //--------------------------------------------------------------------------------------------------------------------//</a>
+<span class="sourceLineNo">068</span><a id="line.68"></a>
+<span class="sourceLineNo">069</span><a id="line.69"></a>
+<span class="sourceLineNo">070</span><a id="line.70">    /**</a>
+<span class="sourceLineNo">071</span><a id="line.71">     * Toggle the intake between extended and retracted.</a>
+<span class="sourceLineNo">072</span><a id="line.72">     * </a>
+<span class="sourceLineNo">073</span><a id="line.73">     * &lt;p&gt;It is expected that this will be used as an instant command to extend and retract the intake. </a>
+<span class="sourceLineNo">074</span><a id="line.74">     */</a>
+<span class="sourceLineNo">075</span><a id="line.75">    public void toggleIntake() {</a>
+<span class="sourceLineNo">076</span><a id="line.76">        if (m_solenoid.get()) {</a>
+<span class="sourceLineNo">077</span><a id="line.77">            retractIntake();</a>
+<span class="sourceLineNo">078</span><a id="line.78">        } else {</a>
+<span class="sourceLineNo">079</span><a id="line.79">            extendIntake();</a>
+<span class="sourceLineNo">080</span><a id="line.80">        }</a>
+<span class="sourceLineNo">081</span><a id="line.81">    }</a>
+<span class="sourceLineNo">082</span><a id="line.82"></a>
+<span class="sourceLineNo">083</span><a id="line.83"></a>
+<span class="sourceLineNo">084</span><a id="line.84">    /**</a>
+<span class="sourceLineNo">085</span><a id="line.85">     * Extend the intake and start the motor.</a>
+<span class="sourceLineNo">086</span><a id="line.86">     */</a>
+<span class="sourceLineNo">087</span><a id="line.87">    public void extendIntake() {</a>
+<span class="sourceLineNo">088</span><a id="line.88">        m_currentState = StateType.Extended;</a>
+<span class="sourceLineNo">089</span><a id="line.89">        m_solenoid.set(true);</a>
+<span class="sourceLineNo">090</span><a id="line.90">        m_pidController.setReference(Calibrations.Intake.extendedTargetRpm, CANSparkMax.ControlType.kVelocity);</a>
+<span class="sourceLineNo">091</span><a id="line.91">    }</a>
+<span class="sourceLineNo">092</span><a id="line.92"></a>
+<span class="sourceLineNo">093</span><a id="line.93"></a>
+<span class="sourceLineNo">094</span><a id="line.94">    /**</a>
+<span class="sourceLineNo">095</span><a id="line.95">     * Retract the intake and stop the motor.</a>
+<span class="sourceLineNo">096</span><a id="line.96">     */</a>
+<span class="sourceLineNo">097</span><a id="line.97">    public void retractIntake() {</a>
+<span class="sourceLineNo">098</span><a id="line.98">        m_currentState = StateType.Retracted;</a>
+<span class="sourceLineNo">099</span><a id="line.99">        m_solenoid.set(false);</a>
+<span class="sourceLineNo">100</span><a id="line.100">        m_pidController.setReference(Calibrations.Intake.retractedTargetRpm, CANSparkMax.ControlType.kVelocity);</a>
+<span class="sourceLineNo">101</span><a id="line.101">    }</a>
+<span class="sourceLineNo">102</span><a id="line.102"></a>
+<span class="sourceLineNo">103</span><a id="line.103"></a>
+<span class="sourceLineNo">104</span><a id="line.104">    //--------------------------------------------------------------------------------------------------------------------//</a>
+<span class="sourceLineNo">105</span><a id="line.105">    /*                                                  PRIVATE METHODS                                                   */</a>
+<span class="sourceLineNo">106</span><a id="line.106">    //--------------------------------------------------------------------------------------------------------------------//</a>
+<span class="sourceLineNo">107</span><a id="line.107"></a>
+<span class="sourceLineNo">108</span><a id="line.108"></a>
+<span class="sourceLineNo">109</span><a id="line.109">    /**</a>
+<span class="sourceLineNo">110</span><a id="line.110">     * Log the telemetry data to disk using the WPILib logger.</a>
+<span class="sourceLineNo">111</span><a id="line.111">     */</a>
+<span class="sourceLineNo">112</span><a id="line.112">    private void logTelemetry() {</a>
+<span class="sourceLineNo">113</span><a id="line.113">        if (Constants.Intake.ENABLE_LOGGING) {</a>
+<span class="sourceLineNo">114</span><a id="line.114">            m_rollerLinearVelocityMps.append(m_encoder.getVelocity());</a>
+<span class="sourceLineNo">115</span><a id="line.115">            m_stateLogEntry.append(m_currentState.toString());</a>
+<span class="sourceLineNo">116</span><a id="line.116">        }</a>
+<span class="sourceLineNo">117</span><a id="line.117">    }</a>
+<span class="sourceLineNo">118</span><a id="line.118"></a>
+<span class="sourceLineNo">119</span><a id="line.119"></a>
+<span class="sourceLineNo">120</span><a id="line.120">    //--------------------------------------------------------------------------------------------------------------------//</a>
+<span class="sourceLineNo">121</span><a id="line.121">    /*                                         CONSTRUCTOR AND PERIODIC METHODS                                           */</a>
+<span class="sourceLineNo">122</span><a id="line.122">    //--------------------------------------------------------------------------------------------------------------------//</a>
+<span class="sourceLineNo">123</span><a id="line.123"></a>
+<span class="sourceLineNo">124</span><a id="line.124"></a>
+<span class="sourceLineNo">125</span><a id="line.125">    /** </a>
+<span class="sourceLineNo">126</span><a id="line.126">     * Constructor for the intake.</a>
+<span class="sourceLineNo">127</span><a id="line.127">     *</a>
+<span class="sourceLineNo">128</span><a id="line.128">     * &lt;p&gt;The NEO 550 motor is fragile when it comes to higher current draws which are common when a motor is stalled. For</a>
+<span class="sourceLineNo">129</span><a id="line.129">     * an intake, stalling the motor can be a fairly common occurence. This is especially true when working through the</a>
+<span class="sourceLineNo">130</span><a id="line.130">     * early iterations of a design. With this in mind, it is important to set safe current limits and fix any "lack of</a>
+<span class="sourceLineNo">131</span><a id="line.131">     * power" issues with gearing, a bigger motor, or adding another motor.</a>
+<span class="sourceLineNo">132</span><a id="line.132">     *</a>
+<span class="sourceLineNo">133</span><a id="line.133">     * &lt;p&gt;The intake is actuated using a single-acting solenoid. This meaning that it is plumbed to default (power off</a>
+<span class="sourceLineNo">134</span><a id="line.134">     * state) to the intake being up.</a>
+<span class="sourceLineNo">135</span><a id="line.135">     *</a>
+<span class="sourceLineNo">136</span><a id="line.136">     * @see &lt;a href="https://www.revrobotics.com/neo-550-brushless-motor-locked-rotor-testing/"&gt;NEO 550 Locked Rotor testing&lt;/a&gt;</a>
+<span class="sourceLineNo">137</span><a id="line.137">     */</a>
+<span class="sourceLineNo">138</span><a id="line.138">    public Intake() {</a>
+<span class="sourceLineNo">139</span><a id="line.139">        m_motor = new CANSparkMax(Constants.Intake.MOTOR_ID, MotorType.kBrushless);</a>
+<span class="sourceLineNo">140</span><a id="line.140">        m_motor.restoreFactoryDefaults();</a>
+<span class="sourceLineNo">141</span><a id="line.141">        m_motor.setSmartCurrentLimit(20);</a>
+<span class="sourceLineNo">142</span><a id="line.142">        m_motor.enableVoltageCompensation(12.0);</a>
+<span class="sourceLineNo">143</span><a id="line.143">        m_motor.setIdleMode(IdleMode.kCoast);</a>
+<span class="sourceLineNo">144</span><a id="line.144"></a>
+<span class="sourceLineNo">145</span><a id="line.145">        m_pidController = m_motor.getPIDController();</a>
+<span class="sourceLineNo">146</span><a id="line.146">        m_pidController.setP(Calibrations.Intake.P);</a>
+<span class="sourceLineNo">147</span><a id="line.147">        m_pidController.setI(0);</a>
+<span class="sourceLineNo">148</span><a id="line.148">        m_pidController.setD(Calibrations.Intake.D);</a>
+<span class="sourceLineNo">149</span><a id="line.149">        m_pidController.setIZone(0);</a>
+<span class="sourceLineNo">150</span><a id="line.150">        m_pidController.setFF(Calibrations.Intake.FF);</a>
+<span class="sourceLineNo">151</span><a id="line.151">        m_pidController.setOutputRange(-1, 1);</a>
+<span class="sourceLineNo">152</span><a id="line.152"></a>
+<span class="sourceLineNo">153</span><a id="line.153">        m_encoder = m_motor.getEncoder();</a>
+<span class="sourceLineNo">154</span><a id="line.154">        m_encoder.setVelocityConversionFactor(Constants.Intake.ROLLER_DIAMETER_FT * Math.PI</a>
+<span class="sourceLineNo">155</span><a id="line.155">            / Constants.Intake.GEAR_RATIO / 60.0);</a>
+<span class="sourceLineNo">156</span><a id="line.156"></a>
+<span class="sourceLineNo">157</span><a id="line.157">        //m_motor.burnFlash();</a>
+<span class="sourceLineNo">158</span><a id="line.158"></a>
+<span class="sourceLineNo">159</span><a id="line.159">        m_solenoid = new Solenoid(Constants.Hardware.REV_PH_ID, PneumaticsModuleType.REVPH, Constants.Intake.SOLENOID_ID);</a>
+<span class="sourceLineNo">160</span><a id="line.160">        m_solenoid.set(false);</a>
+<span class="sourceLineNo">161</span><a id="line.161"></a>
+<span class="sourceLineNo">162</span><a id="line.162">        m_currentState = StateType.Idle;</a>
+<span class="sourceLineNo">163</span><a id="line.163"></a>
+<span class="sourceLineNo">164</span><a id="line.164">        if (Constants.Intake.ENABLE_LOGGING) {</a>
+<span class="sourceLineNo">165</span><a id="line.165">            m_log = DataLogManager.getLog();</a>
+<span class="sourceLineNo">166</span><a id="line.166">            m_rollerLinearVelocityMps = new DoubleLogEntry(m_log, "Intake Roller Linear Velocity (fps)");</a>
+<span class="sourceLineNo">167</span><a id="line.167">            m_stateLogEntry = new StringLogEntry(m_log, "Intake State");</a>
+<span class="sourceLineNo">168</span><a id="line.168">        } else {</a>
+<span class="sourceLineNo">169</span><a id="line.169">            m_log = null;</a>
+<span class="sourceLineNo">170</span><a id="line.170">            m_rollerLinearVelocityMps = null;</a>
+<span class="sourceLineNo">171</span><a id="line.171">            m_stateLogEntry = null;</a>
+<span class="sourceLineNo">172</span><a id="line.172">        }</a>
+<span class="sourceLineNo">173</span><a id="line.173">    }</a>
+<span class="sourceLineNo">174</span><a id="line.174"></a>
+<span class="sourceLineNo">175</span><a id="line.175"></a>
+<span class="sourceLineNo">176</span><a id="line.176">    /**</a>
+<span class="sourceLineNo">177</span><a id="line.177">     * This method is called periodically by the command scheduler and is run before any of the commands are serviced.</a>
+<span class="sourceLineNo">178</span><a id="line.178">     */</a>
+<span class="sourceLineNo">179</span><a id="line.179">    @Override </a>
+<span class="sourceLineNo">180</span><a id="line.180">    public void periodic() {</a>
+<span class="sourceLineNo">181</span><a id="line.181">        logTelemetry();</a>
+<span class="sourceLineNo">182</span><a id="line.182">    }</a>
+<span class="sourceLineNo">183</span><a id="line.183"></a>
+<span class="sourceLineNo">184</span><a id="line.184">}</a>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</pre>
+</div>
+</main>
+</body>
+</html>

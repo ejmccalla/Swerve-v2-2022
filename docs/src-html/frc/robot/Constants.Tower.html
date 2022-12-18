@@ -1,0 +1,182 @@
+<!DOCTYPE HTML>
+<html lang="en">
+<head>
+<title>Source code</title>
+<link rel="stylesheet" type="text/css" href="../../../stylesheet.css" title="Style">
+</head>
+<body>
+<main role="main">
+<div class="sourceContainer">
+<pre><span class="sourceLineNo">001</span><a id="line.1">package frc.robot;</a>
+<span class="sourceLineNo">002</span><a id="line.2"></a>
+<span class="sourceLineNo">003</span><a id="line.3">import edu.wpi.first.math.geometry.Translation2d;</a>
+<span class="sourceLineNo">004</span><a id="line.4">import edu.wpi.first.math.util.Units;</a>
+<span class="sourceLineNo">005</span><a id="line.5"></a>
+<span class="sourceLineNo">006</span><a id="line.6">/**</a>
+<span class="sourceLineNo">007</span><a id="line.7"> * The Constants class constains all of the port mappings and other numerical values which don't require calibration.</a>
+<span class="sourceLineNo">008</span><a id="line.8"> */</a>
+<span class="sourceLineNo">009</span><a id="line.9">public final class Constants {</a>
+<span class="sourceLineNo">010</span><a id="line.10"></a>
+<span class="sourceLineNo">011</span><a id="line.11"></a>
+<span class="sourceLineNo">012</span><a id="line.12">    /**</a>
+<span class="sourceLineNo">013</span><a id="line.13">     * The DriverStation constants are port numbers used by the joysticks/button/controllers on the drivers station.</a>
+<span class="sourceLineNo">014</span><a id="line.14">     */</a>
+<span class="sourceLineNo">015</span><a id="line.15">    public static final class Driver {</a>
+<span class="sourceLineNo">016</span><a id="line.16">        public static final double MAX_DRIVE_VELOCITY_MPS = 3.0;</a>
+<span class="sourceLineNo">017</span><a id="line.17">        public static final double MAX_ROTATION_VELOCITY_RPS = 10.0;</a>
+<span class="sourceLineNo">018</span><a id="line.18">    }</a>
+<span class="sourceLineNo">019</span><a id="line.19"></a>
+<span class="sourceLineNo">020</span><a id="line.20">    /**</a>
+<span class="sourceLineNo">021</span><a id="line.21">     * The DriverStation constants are port numbers used by the joysticks/button/controllers on the drivers station.</a>
+<span class="sourceLineNo">022</span><a id="line.22">     */</a>
+<span class="sourceLineNo">023</span><a id="line.23">    public static final class DriverStation {</a>
+<span class="sourceLineNo">024</span><a id="line.24">        public static final int LEFT_JOYSTICK = 0;</a>
+<span class="sourceLineNo">025</span><a id="line.25">        public static final int RIGHT_JOYSTICK = 1;</a>
+<span class="sourceLineNo">026</span><a id="line.26">        public static final int DRIVER_BUTTON_BOARD = 2;</a>
+<span class="sourceLineNo">027</span><a id="line.27">    }</a>
+<span class="sourceLineNo">028</span><a id="line.28"></a>
+<span class="sourceLineNo">029</span><a id="line.29">    /**</a>
+<span class="sourceLineNo">030</span><a id="line.30">     * The Hardware constants are port numbers and/or CAN ID's of the robot hardware which don't belong to an explicit</a>
+<span class="sourceLineNo">031</span><a id="line.31">     * sub-system.</a>
+<span class="sourceLineNo">032</span><a id="line.32">     */</a>
+<span class="sourceLineNo">033</span><a id="line.33">    public static final class Hardware {</a>
+<span class="sourceLineNo">034</span><a id="line.34">        public static final int REV_PDH_ID = 1;</a>
+<span class="sourceLineNo">035</span><a id="line.35">        public static final int REV_PH_ID = 12;</a>
+<span class="sourceLineNo">036</span><a id="line.36">    }</a>
+<span class="sourceLineNo">037</span><a id="line.37"></a>
+<span class="sourceLineNo">038</span><a id="line.38">    /**</a>
+<span class="sourceLineNo">039</span><a id="line.39">     * The Intake constants are port numbers and/or CAN ID's of the robot hardware which don't belong to an explicit</a>
+<span class="sourceLineNo">040</span><a id="line.40">     * sub-system.</a>
+<span class="sourceLineNo">041</span><a id="line.41">     */</a>
+<span class="sourceLineNo">042</span><a id="line.42">    public static final class Intake {</a>
+<span class="sourceLineNo">043</span><a id="line.43">        /** Switch to enable logging telemetry to disk. */</a>
+<span class="sourceLineNo">044</span><a id="line.44">        public static final boolean ENABLE_LOGGING = false;</a>
+<span class="sourceLineNo">045</span><a id="line.45">        /** CAN ID of the intake motor. */</a>
+<span class="sourceLineNo">046</span><a id="line.46">        public static final int MOTOR_ID = 13;</a>
+<span class="sourceLineNo">047</span><a id="line.47">        /** Port ID of the solenoid. */</a>
+<span class="sourceLineNo">048</span><a id="line.48">        public static final int SOLENOID_ID = 0;</a>
+<span class="sourceLineNo">049</span><a id="line.49">        /** Gear reduction. */</a>
+<span class="sourceLineNo">050</span><a id="line.50">        public static final double GEAR_RATIO = 1.0 / 3.0;</a>
+<span class="sourceLineNo">051</span><a id="line.51">        /** Roller diameter. */</a>
+<span class="sourceLineNo">052</span><a id="line.52">        public static final double ROLLER_DIAMETER_FT = 1.1 / 12.0;</a>
+<span class="sourceLineNo">053</span><a id="line.53">    }</a>
+<span class="sourceLineNo">054</span><a id="line.54"></a>
+<span class="sourceLineNo">055</span><a id="line.55">    /**</a>
+<span class="sourceLineNo">056</span><a id="line.56">     * The Tower constants are port numbers and/or CAN ID's of the robot hardware which don't belong to an explicit</a>
+<span class="sourceLineNo">057</span><a id="line.57">     * sub-system.</a>
+<span class="sourceLineNo">058</span><a id="line.58">     */</a>
+<span class="sourceLineNo">059</span><a id="line.59">    public static final class Tower {</a>
+<span class="sourceLineNo">060</span><a id="line.60">        /** Switch to enable logging telemetry to disk. */</a>
+<span class="sourceLineNo">061</span><a id="line.61">        public static final boolean ENABLE_LOGGING = false;</a>
+<span class="sourceLineNo">062</span><a id="line.62">        /** CAN ID of the intake motor. */</a>
+<span class="sourceLineNo">063</span><a id="line.63">        public static final int MOTOR_ID = 7;</a>
+<span class="sourceLineNo">064</span><a id="line.64">        /** Gear reduction. */</a>
+<span class="sourceLineNo">065</span><a id="line.65">        public static final double GEAR_RATIO = 1.0 / 5.0;</a>
+<span class="sourceLineNo">066</span><a id="line.66">        /** Wheel diameter. */</a>
+<span class="sourceLineNo">067</span><a id="line.67">        public static final double WHEEL_DIAMETER_FT = 2.0 / 12.0;</a>
+<span class="sourceLineNo">068</span><a id="line.68">    }</a>
+<span class="sourceLineNo">069</span><a id="line.69"></a>
+<span class="sourceLineNo">070</span><a id="line.70">    /**</a>
+<span class="sourceLineNo">071</span><a id="line.71">     * The Drivetrain constants are port numbers and/or CAN ID's of the robot hardware which don't belong to an explicit</a>
+<span class="sourceLineNo">072</span><a id="line.72">     * sub-system.</a>
+<span class="sourceLineNo">073</span><a id="line.73">     *</a>
+<span class="sourceLineNo">074</span><a id="line.74">     * &lt;p&gt;The positions of the modules are relative to the robot center and are ordered in the arrays as: front left, front</a>
+<span class="sourceLineNo">075</span><a id="line.75">     * right, rear left, rear right.</a>
+<span class="sourceLineNo">076</span><a id="line.76">     */</a>
+<span class="sourceLineNo">077</span><a id="line.77">    public static final class Drivetrain {</a>
+<span class="sourceLineNo">078</span><a id="line.78">        /** Switch to enable logging telemetry to disk. */</a>
+<span class="sourceLineNo">079</span><a id="line.79">        public static final boolean ENABLE_LOGGING = true;</a>
+<span class="sourceLineNo">080</span><a id="line.80">        public static final String[] MODULE_LABELS = {"FL", "FR", "RL", "RR"};</a>
+<span class="sourceLineNo">081</span><a id="line.81">        public static final int[] TURN_IDS = {9, 30, 11, 18};</a>
+<span class="sourceLineNo">082</span><a id="line.82">        public static final int[] DRIVE_IDS = {8, 41, 10, 19};</a>
+<span class="sourceLineNo">083</span><a id="line.83">        public static final int[] QUAD_A_DIO_CHANNELS = {7, 10, 4, 1};</a>
+<span class="sourceLineNo">084</span><a id="line.84">        public static final int[] QUAD_B_DIO_CHANNELS = {8, 11, 5, 2};</a>
+<span class="sourceLineNo">085</span><a id="line.85">        public static final int[] PWM_DIO_CHANNELS = {6, 9, 3, 0};</a>
+<span class="sourceLineNo">086</span><a id="line.86"></a>
+<span class="sourceLineNo">087</span><a id="line.87">        /** https://www.swervedrivespecialties.com/products/mk4-swerve-module#:~:text=The%20steering%20gear%20ratio%20of,4%20different%20drive%20gear%20ratios */</a>
+<span class="sourceLineNo">088</span><a id="line.88">        public static final double TURN_GEAR_RATIO = 12.8;</a>
+<span class="sourceLineNo">089</span><a id="line.89">        public static final double DRIVE_GEAR_RATIO = 6.75;</a>
+<span class="sourceLineNo">090</span><a id="line.90"></a>
+<span class="sourceLineNo">091</span><a id="line.91">        public static final Translation2d[] MODULE_LOCATIONS = {</a>
+<span class="sourceLineNo">092</span><a id="line.92">            new Translation2d(Units.inchesToMeters(Calibrations.WHEEL_BASE_INCH) / 2,</a>
+<span class="sourceLineNo">093</span><a id="line.93">                              -Units.inchesToMeters(Calibrations.TRACK_WIDTH_INCH) / 2),</a>
+<span class="sourceLineNo">094</span><a id="line.94">            new Translation2d(Units.inchesToMeters(Calibrations.WHEEL_BASE_INCH) / 2,</a>
+<span class="sourceLineNo">095</span><a id="line.95">                              Units.inchesToMeters(Calibrations.TRACK_WIDTH_INCH) / 2),</a>
+<span class="sourceLineNo">096</span><a id="line.96">            new Translation2d(-Units.inchesToMeters(Calibrations.WHEEL_BASE_INCH) / 2,</a>
+<span class="sourceLineNo">097</span><a id="line.97">                              -Units.inchesToMeters(Calibrations.TRACK_WIDTH_INCH) / 2),</a>
+<span class="sourceLineNo">098</span><a id="line.98">            new Translation2d(-Units.inchesToMeters(Calibrations.WHEEL_BASE_INCH) / 2,</a>
+<span class="sourceLineNo">099</span><a id="line.99">                              Units.inchesToMeters(Calibrations.TRACK_WIDTH_INCH) / 2)</a>
+<span class="sourceLineNo">100</span><a id="line.100">        };</a>
+<span class="sourceLineNo">101</span><a id="line.101"></a>
+<span class="sourceLineNo">102</span><a id="line.102">        /** Using a CTRE Mag Encoder. */</a>
+<span class="sourceLineNo">103</span><a id="line.103">        public static final double turnEncPpr = 1024.0;</a>
+<span class="sourceLineNo">104</span><a id="line.104">        public static final int numModules = 4;</a>
+<span class="sourceLineNo">105</span><a id="line.105"></a>
+<span class="sourceLineNo">106</span><a id="line.106">    }</a>
+<span class="sourceLineNo">107</span><a id="line.107"></a>
+<span class="sourceLineNo">108</span><a id="line.108">}</a>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</pre>
+</div>
+</main>
+</body>
+</html>

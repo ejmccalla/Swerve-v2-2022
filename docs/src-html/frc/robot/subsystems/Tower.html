@@ -1,0 +1,239 @@
+<!DOCTYPE HTML>
+<html lang="en">
+<head>
+<title>Source code</title>
+<link rel="stylesheet" type="text/css" href="../../../../stylesheet.css" title="Style">
+</head>
+<body>
+<main role="main">
+<div class="sourceContainer">
+<pre><span class="sourceLineNo">001</span><a id="line.1">package frc.robot.subsystems;</a>
+<span class="sourceLineNo">002</span><a id="line.2"></a>
+<span class="sourceLineNo">003</span><a id="line.3">import com.revrobotics.CANSparkMax;</a>
+<span class="sourceLineNo">004</span><a id="line.4">import com.revrobotics.CANSparkMax.IdleMode;</a>
+<span class="sourceLineNo">005</span><a id="line.5">import com.revrobotics.CANSparkMaxLowLevel.MotorType;</a>
+<span class="sourceLineNo">006</span><a id="line.6">import com.revrobotics.RelativeEncoder;</a>
+<span class="sourceLineNo">007</span><a id="line.7">import com.revrobotics.SparkMaxPIDController;</a>
+<span class="sourceLineNo">008</span><a id="line.8">import edu.wpi.first.util.datalog.DataLog;</a>
+<span class="sourceLineNo">009</span><a id="line.9">import edu.wpi.first.util.datalog.DoubleLogEntry;</a>
+<span class="sourceLineNo">010</span><a id="line.10">import edu.wpi.first.util.datalog.StringLogEntry;</a>
+<span class="sourceLineNo">011</span><a id="line.11">import edu.wpi.first.wpilibj.DataLogManager;</a>
+<span class="sourceLineNo">012</span><a id="line.12">import edu.wpi.first.wpilibj2.command.SubsystemBase;</a>
+<span class="sourceLineNo">013</span><a id="line.13">import frc.robot.Calibrations;</a>
+<span class="sourceLineNo">014</span><a id="line.14">import frc.robot.Constants;</a>
+<span class="sourceLineNo">015</span><a id="line.15"></a>
+<span class="sourceLineNo">016</span><a id="line.16">/**</a>
+<span class="sourceLineNo">017</span><a id="line.17"> * Implements the tower with a NEO 550 and 5:1 reduction.</a>
+<span class="sourceLineNo">018</span><a id="line.18"> */</a>
+<span class="sourceLineNo">019</span><a id="line.19">public class Tower extends SubsystemBase {</a>
+<span class="sourceLineNo">020</span><a id="line.20"></a>
+<span class="sourceLineNo">021</span><a id="line.21">    /**</a>
+<span class="sourceLineNo">022</span><a id="line.22">     * The states of the tower.</a>
+<span class="sourceLineNo">023</span><a id="line.23">     * </a>
+<span class="sourceLineNo">024</span><a id="line.24">     * &lt;p&gt;Commands are responsible for setting the state of the tower and are defined as follows:</a>
+<span class="sourceLineNo">025</span><a id="line.25">     *</a>
+<span class="sourceLineNo">026</span><a id="line.26">     * &lt;p&gt;&lt;b&gt;Idle&lt;/b&gt; - there are no commands currently using the subsystem.</a>
+<span class="sourceLineNo">027</span><a id="line.27">     *</a>
+<span class="sourceLineNo">028</span><a id="line.28">     * &lt;p&gt;&lt;b&gt;LoadCargo&lt;/b&gt; - the tower pushing cargo into the shoooter.</a>
+<span class="sourceLineNo">029</span><a id="line.29">     *</a>
+<span class="sourceLineNo">030</span><a id="line.30">     * &lt;p&gt;&lt;b&gt;UnloadCargo&lt;/b&gt; - the tower pulling cargo out of the shoooter.</a>
+<span class="sourceLineNo">031</span><a id="line.31">     */</a>
+<span class="sourceLineNo">032</span><a id="line.32">    public enum StateType {</a>
+<span class="sourceLineNo">033</span><a id="line.33">        Idle { </a>
+<span class="sourceLineNo">034</span><a id="line.34">            @Override</a>
+<span class="sourceLineNo">035</span><a id="line.35">            public String toString() {</a>
+<span class="sourceLineNo">036</span><a id="line.36">                return "Idle";</a>
+<span class="sourceLineNo">037</span><a id="line.37">            }</a>
+<span class="sourceLineNo">038</span><a id="line.38">        },</a>
+<span class="sourceLineNo">039</span><a id="line.39">        LoadCargo { </a>
+<span class="sourceLineNo">040</span><a id="line.40">            @Override</a>
+<span class="sourceLineNo">041</span><a id="line.41">            public String toString() {</a>
+<span class="sourceLineNo">042</span><a id="line.42">                return "Load Cargo";</a>
+<span class="sourceLineNo">043</span><a id="line.43">            }</a>
+<span class="sourceLineNo">044</span><a id="line.44">        },</a>
+<span class="sourceLineNo">045</span><a id="line.45">        UnloadCargo {</a>
+<span class="sourceLineNo">046</span><a id="line.46">            @Override</a>
+<span class="sourceLineNo">047</span><a id="line.47">            public String toString() {</a>
+<span class="sourceLineNo">048</span><a id="line.48">                return "Unload Cargo";</a>
+<span class="sourceLineNo">049</span><a id="line.49">            }</a>
+<span class="sourceLineNo">050</span><a id="line.50">        },</a>
+<span class="sourceLineNo">051</span><a id="line.51">    }</a>
+<span class="sourceLineNo">052</span><a id="line.52"></a>
+<span class="sourceLineNo">053</span><a id="line.53">    private final CANSparkMax m_motor;</a>
+<span class="sourceLineNo">054</span><a id="line.54">    private SparkMaxPIDController m_pidController;</a>
+<span class="sourceLineNo">055</span><a id="line.55">    private RelativeEncoder m_encoder;</a>
+<span class="sourceLineNo">056</span><a id="line.56">    private final DataLog m_log;</a>
+<span class="sourceLineNo">057</span><a id="line.57">    private StateType m_currentState;</a>
+<span class="sourceLineNo">058</span><a id="line.58">    private DoubleLogEntry m_wheelsLinearVelocityMps;</a>
+<span class="sourceLineNo">059</span><a id="line.59">    private StringLogEntry m_stateLogEntry;</a>
+<span class="sourceLineNo">060</span><a id="line.60"></a>
+<span class="sourceLineNo">061</span><a id="line.61"></a>
+<span class="sourceLineNo">062</span><a id="line.62">    //--------------------------------------------------------------------------------------------------------------------//</a>
+<span class="sourceLineNo">063</span><a id="line.63">    /*                                                   PUBLIC METHODS                                                   */</a>
+<span class="sourceLineNo">064</span><a id="line.64">    //--------------------------------------------------------------------------------------------------------------------//</a>
+<span class="sourceLineNo">065</span><a id="line.65"></a>
+<span class="sourceLineNo">066</span><a id="line.66"></a>
+<span class="sourceLineNo">067</span><a id="line.67">    /**</a>
+<span class="sourceLineNo">068</span><a id="line.68">     * Move the cargo into the shooter.</a>
+<span class="sourceLineNo">069</span><a id="line.69">     */</a>
+<span class="sourceLineNo">070</span><a id="line.70">    public void loadCargo() {</a>
+<span class="sourceLineNo">071</span><a id="line.71">        m_currentState = StateType.LoadCargo;</a>
+<span class="sourceLineNo">072</span><a id="line.72">        m_pidController.setReference(Calibrations.Tower.loadTargetRpm, CANSparkMax.ControlType.kVelocity);</a>
+<span class="sourceLineNo">073</span><a id="line.73">    }</a>
+<span class="sourceLineNo">074</span><a id="line.74"></a>
+<span class="sourceLineNo">075</span><a id="line.75">    /**</a>
+<span class="sourceLineNo">076</span><a id="line.76">     * Pull the cargo out of the shooter.</a>
+<span class="sourceLineNo">077</span><a id="line.77">     */</a>
+<span class="sourceLineNo">078</span><a id="line.78">    public void unloadCargo() {</a>
+<span class="sourceLineNo">079</span><a id="line.79">        m_currentState = StateType.UnloadCargo;</a>
+<span class="sourceLineNo">080</span><a id="line.80">        m_pidController.setReference(-Calibrations.Tower.unloadTargetRpm, CANSparkMax.ControlType.kVelocity);</a>
+<span class="sourceLineNo">081</span><a id="line.81">    }</a>
+<span class="sourceLineNo">082</span><a id="line.82"></a>
+<span class="sourceLineNo">083</span><a id="line.83">    /**</a>
+<span class="sourceLineNo">084</span><a id="line.84">     * Turn off the motor output.</a>
+<span class="sourceLineNo">085</span><a id="line.85">     */</a>
+<span class="sourceLineNo">086</span><a id="line.86">    public void turnOffTower() {</a>
+<span class="sourceLineNo">087</span><a id="line.87">        m_currentState = StateType.Idle;</a>
+<span class="sourceLineNo">088</span><a id="line.88">        m_pidController.setReference(0.0, CANSparkMax.ControlType.kDutyCycle);</a>
+<span class="sourceLineNo">089</span><a id="line.89">    }</a>
+<span class="sourceLineNo">090</span><a id="line.90"></a>
+<span class="sourceLineNo">091</span><a id="line.91"></a>
+<span class="sourceLineNo">092</span><a id="line.92">    //--------------------------------------------------------------------------------------------------------------------//</a>
+<span class="sourceLineNo">093</span><a id="line.93">    /*                                                  PRIVATE METHODS                                                   */</a>
+<span class="sourceLineNo">094</span><a id="line.94">    //--------------------------------------------------------------------------------------------------------------------//</a>
+<span class="sourceLineNo">095</span><a id="line.95"></a>
+<span class="sourceLineNo">096</span><a id="line.96"></a>
+<span class="sourceLineNo">097</span><a id="line.97">    /**</a>
+<span class="sourceLineNo">098</span><a id="line.98">     * Log the telemetry data to disk using the WPILib logger.</a>
+<span class="sourceLineNo">099</span><a id="line.99">     */</a>
+<span class="sourceLineNo">100</span><a id="line.100">    private void logTelemetry() {</a>
+<span class="sourceLineNo">101</span><a id="line.101">        if (Constants.Tower.ENABLE_LOGGING) {</a>
+<span class="sourceLineNo">102</span><a id="line.102">            m_wheelsLinearVelocityMps.append(m_encoder.getVelocity());</a>
+<span class="sourceLineNo">103</span><a id="line.103">            m_stateLogEntry.append(m_currentState.toString());</a>
+<span class="sourceLineNo">104</span><a id="line.104">        }</a>
+<span class="sourceLineNo">105</span><a id="line.105">    }</a>
+<span class="sourceLineNo">106</span><a id="line.106"></a>
+<span class="sourceLineNo">107</span><a id="line.107"></a>
+<span class="sourceLineNo">108</span><a id="line.108">    //--------------------------------------------------------------------------------------------------------------------//</a>
+<span class="sourceLineNo">109</span><a id="line.109">    /*                                         CONSTRUCTOR AND PERIODIC METHODS                                           */</a>
+<span class="sourceLineNo">110</span><a id="line.110">    //--------------------------------------------------------------------------------------------------------------------//</a>
+<span class="sourceLineNo">111</span><a id="line.111"></a>
+<span class="sourceLineNo">112</span><a id="line.112"></a>
+<span class="sourceLineNo">113</span><a id="line.113">    /** </a>
+<span class="sourceLineNo">114</span><a id="line.114">     * Constructor for the tower.</a>
+<span class="sourceLineNo">115</span><a id="line.115">     *</a>
+<span class="sourceLineNo">116</span><a id="line.116">     * &lt;p&gt;The NEO 550 motor is fragile when it comes to higher current draws which are common when a motor is stalled. For</a>
+<span class="sourceLineNo">117</span><a id="line.117">     * the tower, stalling the motor is possible unless synced up with the shooter. With this in mind, it is important to</a>
+<span class="sourceLineNo">118</span><a id="line.118">     * set safe current limits and fix any "lack of power" issues with gearing, a bigger motor, or adding another motor.</a>
+<span class="sourceLineNo">119</span><a id="line.119">     *</a>
+<span class="sourceLineNo">120</span><a id="line.120">     * @see &lt;a href="https://www.revrobotics.com/neo-550-brushless-motor-locked-rotor-testing/"&gt;NEO 550 Locked Rotor testing&lt;/a&gt;</a>
+<span class="sourceLineNo">121</span><a id="line.121">     */</a>
+<span class="sourceLineNo">122</span><a id="line.122">    public Tower() {</a>
+<span class="sourceLineNo">123</span><a id="line.123">        m_motor = new CANSparkMax(Constants.Tower.MOTOR_ID, MotorType.kBrushless);</a>
+<span class="sourceLineNo">124</span><a id="line.124">        m_motor.restoreFactoryDefaults();</a>
+<span class="sourceLineNo">125</span><a id="line.125">        m_motor.setSmartCurrentLimit(20);</a>
+<span class="sourceLineNo">126</span><a id="line.126">        m_motor.enableVoltageCompensation(12.0);</a>
+<span class="sourceLineNo">127</span><a id="line.127">        m_motor.setIdleMode(IdleMode.kCoast);</a>
+<span class="sourceLineNo">128</span><a id="line.128"></a>
+<span class="sourceLineNo">129</span><a id="line.129">        m_pidController = m_motor.getPIDController();</a>
+<span class="sourceLineNo">130</span><a id="line.130">        m_pidController.setP(Calibrations.Tower.P);</a>
+<span class="sourceLineNo">131</span><a id="line.131">        m_pidController.setI(0);</a>
+<span class="sourceLineNo">132</span><a id="line.132">        m_pidController.setD(Calibrations.Tower.D);</a>
+<span class="sourceLineNo">133</span><a id="line.133">        m_pidController.setIZone(0);</a>
+<span class="sourceLineNo">134</span><a id="line.134">        m_pidController.setFF(Calibrations.Tower.FF);</a>
+<span class="sourceLineNo">135</span><a id="line.135">        m_pidController.setOutputRange(-1, 1);</a>
+<span class="sourceLineNo">136</span><a id="line.136"></a>
+<span class="sourceLineNo">137</span><a id="line.137">        m_encoder = m_motor.getEncoder();</a>
+<span class="sourceLineNo">138</span><a id="line.138">        m_encoder.setVelocityConversionFactor(Constants.Tower.WHEEL_DIAMETER_FT * Math.PI</a>
+<span class="sourceLineNo">139</span><a id="line.139">            / Constants.Tower.GEAR_RATIO / 60.0);</a>
+<span class="sourceLineNo">140</span><a id="line.140"></a>
+<span class="sourceLineNo">141</span><a id="line.141">        //m_motor.burnFlash();</a>
+<span class="sourceLineNo">142</span><a id="line.142"></a>
+<span class="sourceLineNo">143</span><a id="line.143">        m_currentState = StateType.Idle;</a>
+<span class="sourceLineNo">144</span><a id="line.144"></a>
+<span class="sourceLineNo">145</span><a id="line.145">        if (Constants.Tower.ENABLE_LOGGING) {</a>
+<span class="sourceLineNo">146</span><a id="line.146">            m_log = DataLogManager.getLog();</a>
+<span class="sourceLineNo">147</span><a id="line.147">            m_wheelsLinearVelocityMps = new DoubleLogEntry(m_log, "Tower Wheels Linear Velocity (fps)");</a>
+<span class="sourceLineNo">148</span><a id="line.148">            m_stateLogEntry = new StringLogEntry(m_log, "Tower State");</a>
+<span class="sourceLineNo">149</span><a id="line.149">        } else {</a>
+<span class="sourceLineNo">150</span><a id="line.150">            m_log = null;</a>
+<span class="sourceLineNo">151</span><a id="line.151">            m_wheelsLinearVelocityMps = null;</a>
+<span class="sourceLineNo">152</span><a id="line.152">            m_stateLogEntry = null;</a>
+<span class="sourceLineNo">153</span><a id="line.153">        }</a>
+<span class="sourceLineNo">154</span><a id="line.154">    }</a>
+<span class="sourceLineNo">155</span><a id="line.155"></a>
+<span class="sourceLineNo">156</span><a id="line.156"></a>
+<span class="sourceLineNo">157</span><a id="line.157">    /**</a>
+<span class="sourceLineNo">158</span><a id="line.158">     * This method is called periodically by the command scheduler and is run before any of the commands are serviced.</a>
+<span class="sourceLineNo">159</span><a id="line.159">     */</a>
+<span class="sourceLineNo">160</span><a id="line.160">    @Override </a>
+<span class="sourceLineNo">161</span><a id="line.161">    public void periodic() {</a>
+<span class="sourceLineNo">162</span><a id="line.162">        logTelemetry();</a>
+<span class="sourceLineNo">163</span><a id="line.163">    }</a>
+<span class="sourceLineNo">164</span><a id="line.164"></a>
+<span class="sourceLineNo">165</span><a id="line.165">}</a>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</pre>
+</div>
+</main>
+</body>
+</html>
