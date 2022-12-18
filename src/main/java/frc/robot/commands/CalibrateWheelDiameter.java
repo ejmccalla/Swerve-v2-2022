@@ -29,7 +29,6 @@ public class CalibrateWheelDiameter extends CommandBase {
     @Override
     public void initialize() {
         m_drivetrain.updateState(StateType.Calibrating);
-        m_drivetrain.setModulesToBrakeMode(false);
         m_drivetrain.resetModulesDriveEncoder();
     }
 
@@ -40,8 +39,7 @@ public class CalibrateWheelDiameter extends CommandBase {
     @Override
     public void execute() {
         m_drivetrain.setIdleModules();
-        SmartDashboard.putNumberArray("Wheel Calibration Rotations",
-                                      m_drivetrain.getModulesDriveRotations());
+        SmartDashboard.putNumberArray("Wheel Calibration Rotations", m_drivetrain.getModulesDriveRotations());
     }
 
     /**
@@ -49,7 +47,10 @@ public class CalibrateWheelDiameter extends CommandBase {
      */
     @Override
     public void end(boolean interrupted) {
+        m_drivetrain.setModulesIdleMode(false);
+        m_drivetrain.setIdleModules();
         m_drivetrain.updateState(StateType.Idle);
+
     }
 
 }

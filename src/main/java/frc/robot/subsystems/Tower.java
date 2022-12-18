@@ -9,8 +9,6 @@ import edu.wpi.first.util.datalog.DataLog;
 import edu.wpi.first.util.datalog.DoubleLogEntry;
 import edu.wpi.first.util.datalog.StringLogEntry;
 import edu.wpi.first.wpilibj.DataLogManager;
-import edu.wpi.first.wpilibj.PneumaticsModuleType;
-import edu.wpi.first.wpilibj.Solenoid;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Calibrations;
 import frc.robot.Constants;
@@ -83,7 +81,7 @@ public class Tower extends SubsystemBase {
     }
 
     /**
-     * Turn off the motor output
+     * Turn off the motor output.
      */
     public void turnOffTower() {
         m_currentState = StateType.Idle;
@@ -121,10 +119,11 @@ public class Tower extends SubsystemBase {
      *
      * @see <a href="https://www.revrobotics.com/neo-550-brushless-motor-locked-rotor-testing/">NEO 550 Locked Rotor testing</a>
      */
-    public Tower(int motorId) {
-        m_motor = new CANSparkMax(motorId, MotorType.kBrushless);
+    public Tower() {
+        m_motor = new CANSparkMax(Constants.Tower.MOTOR_ID, MotorType.kBrushless);
         m_motor.restoreFactoryDefaults();
-        m_motor.setSmartCurrentLimit(20, 40);
+        m_motor.setSmartCurrentLimit(20);
+        m_motor.enableVoltageCompensation(12.0);
         m_motor.setIdleMode(IdleMode.kCoast);
 
         m_pidController = m_motor.getPIDController();
@@ -138,6 +137,8 @@ public class Tower extends SubsystemBase {
         m_encoder = m_motor.getEncoder();
         m_encoder.setVelocityConversionFactor(Constants.Tower.WHEEL_DIAMETER_FT * Math.PI
             / Constants.Tower.GEAR_RATIO / 60.0);
+
+        //m_motor.burnFlash();
 
         m_currentState = StateType.Idle;
 

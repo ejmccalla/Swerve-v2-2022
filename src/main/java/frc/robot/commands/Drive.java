@@ -5,7 +5,6 @@ import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj2.command.CommandBase;
 import frc.robot.Constants;
-import frc.robot.lib.SwerveDriveSignal;
 import frc.robot.subsystems.Drivetrain;
 import frc.robot.subsystems.Drivetrain.StateType;
 
@@ -70,11 +69,7 @@ public class Drive extends CommandBase {
         m_speedY *= Constants.Driver.MAX_DRIVE_VELOCITY_MPS;
         m_speedZ = MathUtil.applyDeadband(m_rateLimiterZ.calculate(-m_leftJoystick.getY()), 0.05);
         m_speedZ *= Constants.Driver.MAX_ROTATION_VELOCITY_RPS;
-
-        // TODO: Review the need for the PID which holds the rotational angle when no rotation is commanded.
-        m_drivetrain.setDesiredModulesState(new SwerveDriveSignal(m_speedX, m_speedY, m_speedZ));
-        //m_drivetrain.setIdleModules();
-
+        m_drivetrain.setDesiredModulesState(m_speedX, m_speedY, m_speedZ);
     }
 
 }

@@ -71,29 +71,23 @@ public final class Constants {
      * The Drivetrain constants are port numbers and/or CAN ID's of the robot hardware which don't belong to an explicit
      * sub-system.
      *
-     * <p>The positions of the modules are relative to the robot center.
+     * <p>The positions of the modules are relative to the robot center and are ordered in the arrays as: front left, front
+     * right, rear left, rear right.
      */
     public static final class Drivetrain {
         /** Switch to enable logging telemetry to disk. */
         public static final boolean ENABLE_LOGGING = true;
-        /** Module order: front left, front right, rear left, rear right. */
         public static final String[] MODULE_LABELS = {"FL", "FR", "RL", "RR"};
-        /** Module order: front left, front right, rear left, rear right. */
         public static final int[] TURN_IDS = {9, 30, 11, 18};
-        /** Module order: front left, front right, rear left, rear right. */
         public static final int[] DRIVE_IDS = {8, 41, 10, 19};
-        /** Module order: front left, front right, rear left, rear right. */
         public static final int[] QUAD_A_DIO_CHANNELS = {7, 10, 4, 1};
-        /** Module order: front left, front right, rear left, rear right. */
         public static final int[] QUAD_B_DIO_CHANNELS = {8, 11, 5, 2};
-        /** Module order: front left, front right, rear left, rear right. */
         public static final int[] PWM_DIO_CHANNELS = {6, 9, 3, 0};
 
         /** https://www.swervedrivespecialties.com/products/mk4-swerve-module#:~:text=The%20steering%20gear%20ratio%20of,4%20different%20drive%20gear%20ratios */
         public static final double TURN_GEAR_RATIO = 12.8;
         public static final double DRIVE_GEAR_RATIO = 6.75;
 
-        /** Module order: front left, front right, rear left, rear right. */
         public static final Translation2d[] MODULE_LOCATIONS = {
             new Translation2d(Units.inchesToMeters(Calibrations.WHEEL_BASE_INCH) / 2,
                               -Units.inchesToMeters(Calibrations.TRACK_WIDTH_INCH) / 2),
@@ -105,6 +99,7 @@ public final class Constants {
                               Units.inchesToMeters(Calibrations.TRACK_WIDTH_INCH) / 2)
         };
 
+        /** Using a CTRE Mag Encoder. */
         public static final double turnEncPpr = 1024.0;
         public static final int numModules = 4;
 

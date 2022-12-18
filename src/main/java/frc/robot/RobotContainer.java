@@ -1,10 +1,13 @@
 package frc.robot;
 
 import edu.wpi.first.wpilibj.Joystick;
+import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
+// import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import frc.robot.commands.Drive;
-import frc.robot.commands.HomeSwerveModules;
 import frc.robot.subsystems.Drivetrain;
 import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.Tower;
@@ -16,17 +19,32 @@ public class RobotContainer {
 
     private final Joystick m_leftJoystick;
     private final Joystick m_rightJoystick;
-    private final JoystickButton m_leftJoystickButton;
+    private final Joystick m_driverButtonBoard;
+    // private final JoystickButton m_leftJoystickButton;
     private final JoystickButton m_rightJoystickButton;
+    private final JoystickButton m_driverButtonBoardLeft;
+    // private final JoystickButton m_driverButtonBoardRight;
+    private final ParallelCommandGroup m_startIntakeAndShoot;
+    private final ParallelCommandGroup m_stopIntakeAndShoot;
     public final Drivetrain m_drivetrain;
     public final Intake m_intake;
     public final Tower m_tower;
+    private final SendableChooser<Command> m_autoChooser = new SendableChooser<>();
 
 
     //--------------------------------------------------------------------------------------------------------------------//
     /*                                                   PUBLIC METHODS                                                   */
     //--------------------------------------------------------------------------------------------------------------------//
 
+
+    /**
+     * Use this to pass the autonomous command to the main {@link Robot} class.
+     *
+     * @return the command to run in autonomous
+     */
+    public Command getAutonomousCommand() {
+        return m_autoChooser.getSelected();
+    }
 
     //--------------------------------------------------------------------------------------------------------------------//
     /*                                                  PRIVATE METHODS                                                   */
@@ -48,27 +66,30 @@ public class RobotContainer {
     public RobotContainer() {
         m_leftJoystick = new Joystick(Constants.DriverStation.LEFT_JOYSTICK);
         m_rightJoystick = new Joystick(Constants.DriverStation.RIGHT_JOYSTICK);
-        m_leftJoystickButton = new JoystickButton(m_leftJoystick, 1);
+        m_driverButtonBoard = new Joystick(Constants.DriverStation.DRIVER_BUTTON_BOARD);
+        // m_leftJoystickButton = new JoystickButton(m_leftJoystick, 1);
         m_rightJoystickButton = new JoystickButton(m_rightJoystick, 1);
+        m_driverButtonBoardLeft = new JoystickButton(m_driverButtonBoard, 2);
+        // m_driverButtonBoardRight = new JoystickButton(m_driverButtonBoard, 3);
+
         m_drivetrain = new Drivetrain();
-        m_intake = new Intake(Constants.Intake.MOTOR_ID, Constants.Intake.SOLENOID_ID);
-        m_tower = new Tower(Constants.Tower.MOTOR_ID);
+        m_intake = new Intake();
+        m_tower = new Tower();
 
         m_drivetrain.setDefaultCommand(new Drive(m_leftJoystick, m_rightJoystick, m_drivetrain));
 
-        // TODO: This setup will only run robot-oriented while a button is held. This may not be
-        // ideal is the drive ALWAYS wants to run in robot-oriented (maybe the IMU drift gets so
-        // far off that field-oriented isn't useful)
-        // m_rightJoystickButton.whenPressed(
-        //     new InstantCommand(() -> m_drivetrain.setIsFieldOriented(false), m_drivetrain)
-        // );
-        // m_rightJoystickButton.whenReleased(
-        //     new InstantCommand(() -> m_drivetrain.setIsFieldOriented(true), m_drivetrain)
-        // );
-        m_rightJoystickButton.whenPressed(new InstantCommand(() -> m_tower.loadCargo(), m_tower));
-        m_rightJoystickButton.whenReleased(new InstantCommand(() -> m_tower.turnOffTower(), m_tower));
-        //m_rightJoystickButton.whenPressed(new HomeSwerveModules(m_drivetrain), false);
-        m_leftJoystickButton.whenPressed(new InstantCommand(() -> m_intake.toggleIntake(), m_intake));
+        m_startIntakeAndShoot = new ParallelCommandGroup(new InstantCommand(() -> m_tower.loadCargo(), m_tower),
+                                                         new InstantCommand(() -> m_intake.extendIntake(), m_intake));
+        m_stopIntakeAndShoot = new ParallelCommandGroup(new InstantCommand(() -> m_tower.turnOffTower(), m_tower),
+                                                        new InstantCommand(() -> m_intake.retractIntake(), m_intake));
+
+        m_rightJoystickButton.whenPressed(new InstantCommand(() -> m_drivetrain.toggleFieldOriented(), m_drivetrain));
+        m_driverButtonBoardLeft.whenPressed(m_startIntakeAndShoot);
+        m_driverButtonBoardLeft.whenReleased(m_stopIntakeAndShoot);
+
+        m_autoChooser.setDefaultOption("Auto 1", new InstantCommand(() -> m_tower.loadCargo(), m_tower));
+        m_autoChooser.addOption("Auto 2", new InstantCommand(() -> m_tower.unloadCargo(), m_tower));
+
 
     }
 

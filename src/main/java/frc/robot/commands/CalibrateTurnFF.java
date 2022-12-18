@@ -5,18 +5,13 @@ import frc.robot.subsystems.Drivetrain;
 import frc.robot.subsystems.Drivetrain.StateType;
 
 /**
- * Implements a command to home all of the swerve modules.
+ * Implements a command to collect data to calibrate the swerve turning motor feed-forwards.
+ *
+ * <p>{@link frc.robot.Calibrations#TURN_FF_KS_GAIN}
+ * {@link frc.robot.Calibrations#TURN_FF_KV_GAIN}
+ * {@link frc.robot.Calibrations#TURN_FF_KA_GAIN}
  */
 public class CalibrateTurnFF extends CommandBase {
-
-    private Drivetrain m_drivetrain;
-
-    /** Devide by 50 because there are 50 loops per 1 second with a 20ms control loop. */
-    private static final double m_rampRateVpl = 0.25 / 50;
-    private static final double m_maxRampVoltage = 4.0;
-    private static final double m_stepVoltage = 4.0;
-
-    private boolean m_isFinished;
 
     private enum State {
         RampPositive,
@@ -25,15 +20,21 @@ public class CalibrateTurnFF extends CommandBase {
         StepNegitive
     }
 
+    private Drivetrain m_drivetrain;
+    /** Divide by 50 because there are 50 loops per 1 second with a 20ms control loop. */
+    private static final double m_rampRateVpl = 0.25 / 50;
+    private static final double m_maxRampVoltage = 10.0;
+    private static final double m_stepVoltage = 6.0;
+    private boolean m_isFinished;
     private State m_state;
     private double m_voltage;
     private int m_offVoltageCounter;
     private int m_onVoltageCounter;
 
     /**
-     * Contructor.
+     * Constructor for the calibrate tunrning feed-forward command.
      *
-     * @param drivetrain this commands needs the drivetrain
+     * @param drivetrain uses the drivetrain subsystem
      */
     public CalibrateTurnFF(Drivetrain drivetrain) {
         m_drivetrain = drivetrain;
@@ -53,7 +54,6 @@ public class CalibrateTurnFF extends CommandBase {
         m_voltage = 0.0;
         m_offVoltageCounter = 50;
         m_onVoltageCounter = 50;
-        m_drivetrain.setModulesToBrakeMode(true);
         m_state = State.RampPositive;
     }
 
@@ -65,7 +65,6 @@ public class CalibrateTurnFF extends CommandBase {
         switch (m_state) {
             case RampPositive:
                 m_voltage += m_rampRateVpl;
-
                 if (m_voltage >= m_maxRampVoltage) {
                     m_state = State.RampNegitive;
                     m_voltage = 0.0;
@@ -140,7 +139,7 @@ public class CalibrateTurnFF extends CommandBase {
      */
     @Override
     public void end(boolean interrupted) {
-        m_drivetrain.setModulesToBrakeMode(false);
+        m_drivetrain.setModulesIdleMode(false);
         m_drivetrain.setIdleModules();
         m_drivetrain.updateState(StateType.Idle);
     }

@@ -27,6 +27,7 @@ public final class Calibrations {
         public static final double unloadTargetRpm = 0.5 * 11000.0;
     }
 
+
     /** 
      * The average wheel diameter (best: calibrate with encoders, ok: use tape measure).
      *
@@ -50,9 +51,9 @@ public final class Calibrations {
      *
      * <p>8. The average wheel diameter is the measured distance divided by 10*pi.
      *
-     * @implNote This should be done before each event minimum
+     * <p>This should be done before each event minimum
      */
-    public static final double WHEEL_DIAMETER_INCH = 4.0;
+    public static final double WHEEL_DIAMETER_INCH = 4.0; // TODO: Calibrate with encoders
 
 
     /**
@@ -67,7 +68,7 @@ public final class Calibrations {
      * <p>Any changes to the track width from step 2 likely indicates there is mechanical damage to the module. Also, if the
      * difference between the left/right wheel pairs is large, this indicates an "out-of-square" frame.
      *
-     * @implNote This should be done before each event minimum
+     * <p>This should be done before each event minimum
      */
     public static final double TRACK_WIDTH_INCH = 19.5;
 
@@ -84,7 +85,7 @@ public final class Calibrations {
      * <p>Any changes to the wheel base from step 2 likely indicates there is mechanical damage to the module. Also, if the
      * difference between the front/rear wheel pairs is large, this indicates an "out-of-square" frame.
      *
-     * @implNote This should be done before each event minimum
+     * <p>This should be done before each event minimum
      */
     public static final double WHEEL_BASE_INCH = 19.5;
 
@@ -111,7 +112,7 @@ public final class Calibrations {
      *
      * <p>The ordering of the values below are : front left, front right, rear left, rear right.
      *
-     * @implNote This should be done before each event minimum
+     * <p>This should be done before each event minimum
      */
     public static final double[] ZEROS_RAD = {1.27, 0.91, 0.27, 5.82};
 
@@ -122,9 +123,9 @@ public final class Calibrations {
      * <p>This value should be tuned such that it is tight enough to properly home the wheels, but not too tight where the
      * homing routine oscillates and never reaches the goal.
      *
-     * @implNote This should be tuned before each event minimum
+     * <p>This should be tuned before each event minimum
      */
-    public static final double MAX_TURN_ERROR_DEG = 2.0;
+    public static final double MAX_TURN_ERROR_DEG = 2.0; // TODO: How to monitor
 
 
     /**
@@ -151,10 +152,10 @@ public final class Calibrations {
      *
      * <p>The ordering of the values below are : front left, front right, rear left, rear right.
      *
-     * @implNote This should be measured before each event minimum
+     * <p>This should be measured before each event minimum
      */
     public static final double[] MAX_TURN_VELOCITY_RPS = 
-        {10 * Math.PI, 10 * Math.PI, 10 * Math.PI, 10 * Math.PI};
+        {10 * Math.PI, 10 * Math.PI, 10 * Math.PI, 10 * Math.PI}; // TODO: Part of turning FF calibration
 
 
     /**
@@ -184,10 +185,10 @@ public final class Calibrations {
      *
      * <p>The ordering of the values below are : front left, front right, rear left, rear right.
      *
-     * @implNote This should be tuned before each event minimum
+     * <p>This should be tuned before each event minimum
      */
     public static final double[] MAX_TURN_ACCELERATION_RPSS = 
-        {10 * Math.PI, 10 * Math.PI, 10 * Math.PI, 10 * Math.PI};
+        {10 * Math.PI, 10 * Math.PI, 10 * Math.PI, 10 * Math.PI}; // TODO: Part of turning FF calibration
 
 
     /**
@@ -195,9 +196,9 @@ public final class Calibrations {
      *
      * <p>The same gain is appplied across all of the swerve modules and modes.
      *
-     * @implNote This should be tuned before each event minimum
+     * <p>This should be tuned before each event minimum
      */
-    public static final double TURN_P_GAIN = 4.0;
+    public static final double TURN_P_GAIN = 4.0; // TODO: Do after FF is implemented
 
 
     /**
@@ -205,9 +206,9 @@ public final class Calibrations {
      *
      * <p>The same gain is appplied across all of the swerve modules and modes.
      *
-     * @implNote This should be tuned before each event minimum
+     * <p>This should be tuned before each event minimum
      */
-    public static final double TURN_D_GAIN = 0.0;
+    public static final double TURN_D_GAIN = 0.0; // TODO: Do after FF is implemented
 
 
     /**
@@ -217,10 +218,11 @@ public final class Calibrations {
      *
      * <p>The ordering of the values below are : front left, front right, rear left, rear right.
      *
-     * @implNote This should be tuned before each event minimum
+     *<p>This should be tuned before each event minimum
+     *
      * @see <a href="https://docs.wpilib.org/en/stable/docs/software/pathplanning/system-identification/introduction.html">WPILib System Identification</a>
      */
-    public static final double[] TURN_FF_KS_GAIN = {0.0, 0.0, 0.0, 0.0};
+    public static final double[] TURN_FF_KS_GAIN = {0.0, 0.0, 0.0, 0.0}; // TODO: Part of turning FF calibration
 
 
     /**
@@ -230,10 +232,11 @@ public final class Calibrations {
      *
      * <p>The ordering of the values below are : front left, front right, rear left, rear right.
      *
-     * @implNote This should be tuned before each event minimum
+     * <p>This should be tuned before each event minimum
+     *
      * @see <a href="https://docs.wpilib.org/en/stable/docs/software/pathplanning/system-identification/introduction.html">WPILib System Identification</a>
      */
-    public static final double[] TURN_FF_KV_GAIN = {0.0, 0.0, 0.0, 0.0};
+    public static final double[] TURN_FF_KV_GAIN = {0.0, 0.0, 0.0, 0.0}; // TODO: Part of turning FF calibration
 
 
     /**
@@ -243,10 +246,11 @@ public final class Calibrations {
      *
      * <p>The ordering of the values below are : front left, front right, rear left, rear right.
      *
-     * @implNote This should be tuned before each event minimum
-     * @see <a href="https://docs.wpilib.org/en/stable/docs/software/pathplanning/system-identification/introduction.html">WPILib System Identification</a>
+     * <p>This should be tuned before each event minimum
+     *
+     *  @see <a href="https://docs.wpilib.org/en/stable/docs/software/pathplanning/system-identification/introduction.html">WPILib System Identification</a>
      */
-    public static final double[] TURN_FF_KA_GAIN = {0.0, 0.0, 0.0, 0.0};
+    public static final double[] TURN_FF_KA_GAIN = {0.0, 0.0, 0.0, 0.0}; // TODO: Part of turning FF calibration
 
 
     /**
@@ -254,9 +258,9 @@ public final class Calibrations {
      *
      * <p>The same gain is appplied across all of the swerve modules and modes.
      *
-     * @implNote This should be tuned before each event minimum
+     * <p>This should be tuned before each event minimum
      */
-    public static final double DRIVE_P_GAIN = 3.0;
+    public static final double DRIVE_P_GAIN = 3.0; // TODO: Do after FF is implemented
 
 
     /**
@@ -264,9 +268,9 @@ public final class Calibrations {
      *
      * <p>The same gain is appplied across all of the swerve modules and modes.
      *
-     * @implNote This should be tuned before each event minimum
+     * <p>This should be tuned before each event minimum
      */
-    public static final double DRIVE_D_GAIN = 0.0;
+    public static final double DRIVE_D_GAIN = 0.0; // TODO: Do after FF is implemented
 
 
     /**
@@ -276,10 +280,11 @@ public final class Calibrations {
      *
      * <p>The ordering of the values below are : front left, front right, rear left, rear right.
      *
-     * @implNote This should be tuned before each event minimum
+     * <p>This should be tuned before each event minimum
+     *
      * @see <a href="https://docs.wpilib.org/en/stable/docs/software/pathplanning/system-identification/introduction.html">WPILib System Identification</a>
      */
-    public static final double[] DRIVE_FF_KS_GAIN = {0.0, 0.0, 0.0, 0.0};
+    public static final double[] DRIVE_FF_KS_GAIN = {0.0, 0.0, 0.0, 0.0}; // TODO: Write command and calibrate
 
 
     /**
@@ -289,10 +294,11 @@ public final class Calibrations {
      *
      * <p>The ordering of the values below are : front left, front right, rear left, rear right.
      *
-     * @implNote This should be tuned before each event minimum
+     * <p>This should be tuned before each event minimum
+     *
      * @see <a href="https://docs.wpilib.org/en/stable/docs/software/pathplanning/system-identification/introduction.html">WPILib System Identification</a>
      */
-    public static final double[] DRIVE_FF_KV_GAIN = {0.0, 0.0, 0.0, 0.0};
+    public static final double[] DRIVE_FF_KV_GAIN = {0.0, 0.0, 0.0, 0.0}; // TODO: Write command and calibrate
 
 
     /**
@@ -302,10 +308,11 @@ public final class Calibrations {
      *
      * <p>The ordering of the values below are : front left, front right, rear left, rear right.
      *
-     * @implNote This should be tuned before each event minimum
+     * <p>This should be tuned before each event minimum
+     *
      * @see <a href="https://docs.wpilib.org/en/stable/docs/software/pathplanning/system-identification/introduction.html">WPILib System Identification</a>
      */
-    public static final double[] DRIVE_FF_KA_GAIN = {0.0, 0.0, 0.0, 0.0};
+    public static final double[] DRIVE_FF_KA_GAIN = {0.0, 0.0, 0.0, 0.0}; // TODO: Write command and calibrate
 
 
     /**
@@ -313,8 +320,8 @@ public final class Calibrations {
      * 
      * <p>This is used as a driving speed limit. As the driver gets better this value can be increased towards maximum.
      *
-     * @implNote This should be set before each event minimum
+     * <p>This should be set before each event minimum
      */
-    public static final double MAX_DRIVE_VELOCITY_MPS = 2.0;
+    public static final double MAX_DRIVE_VELOCITY_MPS = 2.0; // TODO: Write command and calibrate
 
 }

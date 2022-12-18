@@ -5,19 +5,20 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
+import edu.wpi.first.util.datalog.BooleanLogEntry;
 import edu.wpi.first.util.datalog.DataLog;
 import edu.wpi.first.util.datalog.StringLogEntry;
 import edu.wpi.first.wpilibj.DataLogManager;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Calibrations;
 import frc.robot.Constants;
 import frc.robot.lib.ADIS16470;
-import frc.robot.lib.SwerveDriveSignal;
 import frc.robot.lib.SwerveModule;
 
 /**
  * Implements the swerve drivetrain using REV/SparkMax, swerve MK4 modules, CTRE mag encoders, and an ADIS16470 IMU.
+ *
+ * @see <a href="https://www.analog.com/media/en/technical-documentation/data-sheets/ADIS16470.pdf">ADIS16470 IMU Datasheet</a>
  */
 public class Drivetrain extends SubsystemBase {
 
@@ -27,8 +28,6 @@ public class Drivetrain extends SubsystemBase {
      * <p>Commands are responsible for setting the state of the drivetrain and are defined as follows:
      *
      * <p><b>Idle</b> - There are no commands currently using the subsystem.
-     *
-     * <p><b>Homing</b> - The swerve modules are homing.
      *
      * <p><b>Driving</b> - The driver is controlling the robot.
      *
@@ -41,12 +40,6 @@ public class Drivetrain extends SubsystemBase {
             @Override
             public String toString() {
                 return "Idle";
-            }
-        },
-        Homing { 
-            @Override
-            public String toString() {
-                return "Homing";
             }
         },
         Driving {
@@ -77,16 +70,49 @@ public class Drivetrain extends SubsystemBase {
     private SwerveModuleState[] m_currentModulesState;
     private SwerveModuleState[] m_desiredModulesState;
     private ChassisSpeeds m_chassisSpeeds;
-    private boolean m_areAllModulesHomed;
     private boolean m_isFieldOriented;
     private Rotation2d m_imuYawAngleRot2D;
     private StateType m_currentState;
     private StringLogEntry m_stateLogEntry;
+    private BooleanLogEntry m_fieldOrientedLogEntry;
 
 
     //--------------------------------------------------------------------------------------------------------------------//
     /*                                                   PUBLIC METHODS                                                   */
     //--------------------------------------------------------------------------------------------------------------------//
+
+
+    /**
+     * Set the state of the swerve modules to perform the desired auto/teleop command.
+     *
+     * @param speedX the translational speed along the X-axis
+     * @param speedY the translational speed along the Y-axis
+     * @param speedRot the rotational speed about the Z-axis
+     */
+    public void setDesiredModulesState(double speedX, double speedY, double speedRot) {
+        if (m_isFieldOriented) {
+            m_chassisSpeeds = ChassisSpeeds.fromFieldRelativeSpeeds(speedX, speedY, speedRot, m_imuYawAngleRot2D);
+        } else {
+            m_chassisSpeeds = new ChassisSpeeds(speedX, speedY, speedRot);
+        }
+        m_desiredModulesState = m_kinematics.toSwerveModuleStates(m_chassisSpeeds);
+
+        SwerveDriveKinematics.desaturateWheelSpeeds(m_desiredModulesState, Calibrations.MAX_DRIVE_VELOCITY_MPS);
+        for (int i = 0; i < Constants.Drivetrain.numModules; i++) {
+            m_modules[i].setDesiredState(m_desiredModulesState[i]);
+        }
+    }
+
+
+    /**
+     * Set offset of the modules azimuth angle by using the input absolute "home" angle and the current angle read from the
+     * duty cycle endcoder.
+     */
+    public void setHomeOffsets() {
+        for (int i = 0; i < Constants.Drivetrain.numModules; i++) {
+            m_modules[i].setHomeOffset(Calibrations.ZEROS_RAD[i]);
+        }
+    }
 
 
     /**
@@ -98,21 +124,11 @@ public class Drivetrain extends SubsystemBase {
         }
     }
 
-    /**
-     * Set the state of the swerve modules to turn to their home position.
-     */
-    public void setHomedModulesState() {
-        m_areAllModulesHomed = true;
-        for (int i = 0; i < Constants.Drivetrain.numModules; i++) {
-            m_modules[i].setHomedModuleState();
-            m_areAllModulesHomed = m_areAllModulesHomed && m_modules[i].getIsHomed();
-        }
-    }
 
     /**
      * Sets the commanded voltage of the turn motors.
      *
-     * @param voltage the voltage the motors is set to.
+     * @param voltage the voltage input of the motors
      */
     public void setModulesTurnVoltage(double voltage) {
         for (int i = 0; i < Constants.Drivetrain.numModules; i++) {
@@ -120,36 +136,67 @@ public class Drivetrain extends SubsystemBase {
         }
     }
 
+
     /**
-     * Reset the profiled PID turning controllers which will zero out the integral term and update the setpoint to the
-     * current angle of the absolute encoder.
+     * Sets the commanded voltage of the drive motors.
+     *
+     * @param voltage the voltage input of the motors
      */
-    public void resetModulesTurningController() {
+    public void setModulesDriveVoltage(double voltage) {
         for (int i = 0; i < Constants.Drivetrain.numModules; i++) {
-            m_modules[i].resetTurningController();
+            m_modules[i].setDriveVoltage(voltage);
         }
     }
 
 
-    /** 
-     * Set the state of the swerve modules to perform the desired auto/teleop command.
+    /**
+     * Set the idle mode of the modules motors.
+     *
+     * @param isBrakeDesired true sets brake mode, false sets coast mode
      */
-    public void setDesiredModulesState(SwerveDriveSignal driveSignal) {
-        if (m_isFieldOriented) {
-            m_chassisSpeeds = ChassisSpeeds.fromFieldRelativeSpeeds(driveSignal.getxSpeed(), driveSignal.getySpeed(), 
-                                                                    driveSignal.getRotationalSpeed(), m_imuYawAngleRot2D);
-        } else {
-            m_chassisSpeeds =
-                new ChassisSpeeds(driveSignal.getxSpeed(), driveSignal.getySpeed(), driveSignal.getRotationalSpeed());
-        }
-        m_desiredModulesState = m_kinematics.toSwerveModuleStates(m_chassisSpeeds);
-
-        // TODO: Calibrate the velocity constraint.
-        SwerveDriveKinematics.desaturateWheelSpeeds(m_desiredModulesState, Calibrations.MAX_DRIVE_VELOCITY_MPS);
+    public void setModulesIdleMode(boolean isBrakeDesired) {
         for (int i = 0; i < Constants.Drivetrain.numModules; i++) {
-            m_modules[i].setDesiredState(m_desiredModulesState[i]);
+            m_modules[i].setIdleMode(isBrakeDesired);
         }
     }
+
+    /**
+     * Set the drive encoder postion to 0 for all modules.
+     */
+    public void resetModulesDriveEncoder() {
+        for (int i = 0; i < Constants.Drivetrain.numModules; i++) {
+            m_modules[i].resetDriveEncoder();
+        }
+    }
+
+
+    /**
+     * Get the offset of the modules azimuth angle.
+     *
+     * @return the home offsets in radians
+     */
+    public double[] getHomeOffsets() {
+        double[] homeOffsets = new double[Constants.Drivetrain.numModules];
+        for (int i = 0; i < Constants.Drivetrain.numModules; i++) {
+            homeOffsets[i] = m_modules[i].getHomeOffset();
+        }
+        return homeOffsets;
+    }
+
+
+    /**
+     * Get the drive encoder postion for all modules in their native units of rotations.
+     *
+     * @return the rotations of the swerve drive encoders
+     */
+    public double[] getModulesDriveRotations() {
+        double[] rotations = new double[Constants.Drivetrain.numModules];
+        for (int i = 0; i < Constants.Drivetrain.numModules; i++) {
+            rotations[i] = m_modules[i].getDriveEncPosRot();
+        }
+        return rotations;
+    }
+
 
     /**
      * Update the state of the drivetrain.
@@ -162,43 +209,23 @@ public class Drivetrain extends SubsystemBase {
         m_currentState = state;
     }
 
+
     /**
-     * Check if all of the swerve modules have completed the homing sequence.
-     *
-     * @return true if all the modules are homed, otherwise false
+     * Toggle whether the drive commands are field oriented or robot oriented.
      */
-    public boolean getAreAllModulesHomed() {
-        return m_areAllModulesHomed;
+    public void toggleFieldOriented() {
+        m_isFieldOriented = !m_isFieldOriented;
     }
 
     /**
-     * Set whether the drive commands are field oriented or robot oriented.
+     * Get the drive command orientation.
      *
-     * @param isFieldOriented true for field oriented drive, false for robot oriented drive
+     * @return if driving is field oriented
      */
-    public void setIsFieldOriented(boolean isFieldOriented) {
-        m_isFieldOriented = isFieldOriented;
+    public boolean isFieldOriented() {
+        return m_isFieldOriented;
     }
 
-    /**
-     * Set the idle mode of the modules motors.
-     *
-     * @param isBrakeDesired true sets brake mode, false sets coast mode
-     */
-    public void setModulesToBrakeMode(boolean isBrakeDesired) {
-        for (int i = 0; i < Constants.Drivetrain.numModules; i++) {
-            m_modules[i].setModulesToBrakeMode(isBrakeDesired);
-        }
-    }
-
-    /**
-     * Set the drive encoder postion to 0 for all modules.
-     */
-    public void resetModulesDriveEncoder() {
-        for (int i = 0; i < Constants.Drivetrain.numModules; i++) {
-            m_modules[i].resetDriveEncoder();
-        }
-    }
 
     /**
      * Get the yaw angle of the IMU.
@@ -218,19 +245,6 @@ public class Drivetrain extends SubsystemBase {
         return m_imu.getTemp();
     }
 
-    /**
-     * Get the drive encoder postion for all modules in their native units of rotations.
-     *
-     * @return the rotations of the swerve drive encoders
-     */
-    public double[] getModulesDriveRotations() {
-        double[] rotations = new double[Constants.Drivetrain.numModules];
-        for (int i = 0; i < Constants.Drivetrain.numModules; i++) {
-            rotations[i] = m_modules[i].getDriveEncPosRot();
-        }
-        return rotations;
-    }
-
 
     //--------------------------------------------------------------------------------------------------------------------//
     /*                                                  PRIVATE METHODS                                                   */
@@ -243,6 +257,7 @@ public class Drivetrain extends SubsystemBase {
     private void logTelemetry() {
         if (Constants.Drivetrain.ENABLE_LOGGING) {
             m_stateLogEntry.append(m_currentState.toString());
+            m_fieldOrientedLogEntry.append(isFieldOriented());
         }
     }
 
@@ -269,7 +284,6 @@ public class Drivetrain extends SubsystemBase {
         m_currentModulesState = new SwerveModuleState[Constants.Drivetrain.numModules];
         for (int i = 0; i < Constants.Drivetrain.numModules; i++) {
             m_modules[i] = new SwerveModule(Constants.Drivetrain.MODULE_LABELS[i],
-                                            Calibrations.ZEROS_RAD[i],
                                             Constants.Drivetrain.TURN_IDS[i],
                                             Constants.Drivetrain.DRIVE_IDS[i],
                                             Constants.Drivetrain.PWM_DIO_CHANNELS[i],
@@ -285,23 +299,23 @@ public class Drivetrain extends SubsystemBase {
                                             Calibrations.DRIVE_FF_KA_GAIN[i]);
             m_desiredModulesState[i] = new SwerveModuleState(0.0, new Rotation2d());
             m_currentModulesState[i] = m_modules[i].getCurrentState();
-            m_modules[i].setModulesToBrakeMode(false);
         }
         m_kinematics = new SwerveDriveKinematics(Constants.Drivetrain.MODULE_LOCATIONS);
         m_imu = new ADIS16470();
         m_odometry = new SwerveDriveOdometry(m_kinematics, Rotation2d.fromDegrees(0.0));
         m_chassisSpeeds = new ChassisSpeeds(0.0, 0.0, 0.0);
         m_currentState = StateType.Idle;
-        m_areAllModulesHomed = false;
         m_isFieldOriented = true;
         m_imuYawAngleRot2D = new Rotation2d();
 
         if (Constants.Drivetrain.ENABLE_LOGGING) {
             m_log = DataLogManager.getLog();
             m_stateLogEntry = new StringLogEntry(m_log, "Drivetrain State");
+            m_fieldOrientedLogEntry = new BooleanLogEntry(m_log, "Is Field Oriented");
         } else {
             m_log = null;
             m_stateLogEntry = null;
+            m_fieldOrientedLogEntry = null;
         }
     }
 
@@ -314,7 +328,6 @@ public class Drivetrain extends SubsystemBase {
         m_imuYawAngleRot2D =  Rotation2d.fromDegrees(m_imu.getAngle());
         for (int i = 0; i < Constants.Drivetrain.numModules; i++) {
             m_currentModulesState[i] = m_modules[i].getCurrentState();
-            SmartDashboard.putNumber("Rel Enc Val " + i, m_modules[i].getTurnRelEncAngleRad());
         }
         m_odometry.update(m_imuYawAngleRot2D, m_currentModulesState);
         logModulesTelemetry();

@@ -74,17 +74,32 @@ public class Intake extends SubsystemBase {
      */
     public void toggleIntake() {
         if (m_solenoid.get()) {
-            m_currentState = StateType.Retracted;
-            m_solenoid.set(false);
-            m_pidController.setReference(Calibrations.Intake.retractedTargetRpm, 
-                                         CANSparkMax.ControlType.kVelocity);
+            retractIntake();
         } else {
-            m_solenoid.set(true);
-            m_currentState = StateType.Extended;
-            m_pidController.setReference(Calibrations.Intake.extendedTargetRpm,
-                                         CANSparkMax.ControlType.kVelocity);
+            extendIntake();
         }
     }
+
+
+    /**
+     * Extend the intake and start the motor.
+     */
+    public void extendIntake() {
+        m_currentState = StateType.Extended;
+        m_solenoid.set(true);
+        m_pidController.setReference(Calibrations.Intake.extendedTargetRpm, CANSparkMax.ControlType.kVelocity);
+    }
+
+
+    /**
+     * Retract the intake and stop the motor.
+     */
+    public void retractIntake() {
+        m_currentState = StateType.Retracted;
+        m_solenoid.set(false);
+        m_pidController.setReference(Calibrations.Intake.retractedTargetRpm, CANSparkMax.ControlType.kVelocity);
+    }
+
 
     //--------------------------------------------------------------------------------------------------------------------//
     /*                                                  PRIVATE METHODS                                                   */
@@ -120,10 +135,11 @@ public class Intake extends SubsystemBase {
      *
      * @see <a href="https://www.revrobotics.com/neo-550-brushless-motor-locked-rotor-testing/">NEO 550 Locked Rotor testing</a>
      */
-    public Intake(int motorId, int solenoidId) {
-        m_motor = new CANSparkMax(motorId, MotorType.kBrushless);
+    public Intake() {
+        m_motor = new CANSparkMax(Constants.Intake.MOTOR_ID, MotorType.kBrushless);
         m_motor.restoreFactoryDefaults();
-        m_motor.setSmartCurrentLimit(20, 40);
+        m_motor.setSmartCurrentLimit(20);
+        m_motor.enableVoltageCompensation(12.0);
         m_motor.setIdleMode(IdleMode.kCoast);
 
         m_pidController = m_motor.getPIDController();
@@ -138,7 +154,9 @@ public class Intake extends SubsystemBase {
         m_encoder.setVelocityConversionFactor(Constants.Intake.ROLLER_DIAMETER_FT * Math.PI
             / Constants.Intake.GEAR_RATIO / 60.0);
 
-        m_solenoid = new Solenoid(Constants.Hardware.REV_PH_ID, PneumaticsModuleType.REVPH, solenoidId);
+        //m_motor.burnFlash();
+
+        m_solenoid = new Solenoid(Constants.Hardware.REV_PH_ID, PneumaticsModuleType.REVPH, Constants.Intake.SOLENOID_ID);
         m_solenoid.set(false);
 
         m_currentState = StateType.Idle;
@@ -161,11 +179,6 @@ public class Intake extends SubsystemBase {
     @Override 
     public void periodic() {
         logTelemetry();
-        if (m_currentState == StateType.Extended) {
-            m_pidController.setReference(Calibrations.Intake.extendedTargetRpm, CANSparkMax.ControlType.kVelocity);
-        } else {
-            m_pidController.setReference(Calibrations.Intake.retractedTargetRpm, CANSparkMax.ControlType.kVelocity);
-        }
     }
 
 }
