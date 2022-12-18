@@ -126,7 +126,7 @@ public class Intake extends SubsystemBase {
      * Constructor for the intake.
      *
      * <p>The NEO 550 motor is fragile when it comes to higher current draws which are common when a motor is stalled. For
-     * an intake, stalling the motor can be a fairly common occurence. This is especially true when working through the
+     * an intake, stalling the motor can be a fairly common occurrence. This is especially true when working through the
      * early iterations of a design. With this in mind, it is important to set safe current limits and fix any "lack of
      * power" issues with gearing, a bigger motor, or adding another motor.
      *

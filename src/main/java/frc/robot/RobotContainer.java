@@ -59,7 +59,7 @@ public class RobotContainer {
     /**
      * Constructor for the robot container.
      * 
-     * <p>The default command for the drivetrain is the {@link frc.robot.commands.Drive} commamnd. The default behavior of
+     * <p>The default command for the drivetrain is the {@link frc.robot.commands.Drive} command. The default behavior of
      * the drive command is to be field-oriented. The right joystick button is used to change this behavior. While this
      * button is pressed, the drive commands will be robot-oriented.
      */

@@ -4,7 +4,7 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.util.Units;
 
 /**
- * The Constants class constains all of the port mappings and other numerical values which don't require calibration.
+ * The Constants class contains all of the port mappings and other numerical values which don't require calibration.
  */
 public final class Constants {
 

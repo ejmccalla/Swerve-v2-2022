@@ -30,7 +30,7 @@ public class Drive extends CommandBase {
      * Constructor for the drivetrain drive command.
      *
      * @param leftJoystick the left joystick controls the rotational velocity
-     * @param rightJoystick the right joystick conrols the X and Y translational velocities
+     * @param rightJoystick the right joystick controls the X and Y translational velocities
      * @param drivetrain uses the drivetrain for drive encoder feedback to the smart dashboard
      */
     public Drive(Joystick leftJoystick, Joystick rightJoystick, Drivetrain drivetrain) {
@@ -46,9 +46,9 @@ public class Drive extends CommandBase {
     }
 
     /**
-     * Update the drivetrain state to indicate the subysystem is being driven manually.
+     * Update the drivetrain state to indicate the subsystem is being driven manually.
      * 
-     * <p>This command should be scheduled as non-interruptable.
+     * <p>This command should be scheduled as non-interruptible.
      */
     @Override
     public void initialize() {
@@ -59,7 +59,7 @@ public class Drive extends CommandBase {
      * Compose the swerve drive signal.
      * 
      * <p>Each of the driver inputs (X and Y translational velocity and rotational velocity) are rate limited and have an
-     * appied deadband. These values should be set based on driver feedback.
+     * applied deadband. These values should be set based on driver feedback.
      */
     @Override
     public void execute() {

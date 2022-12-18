@@ -44,18 +44,18 @@ public class ADIS16470 implements AutoCloseable, NTSendable {
   private static final int Z_ACCL_OUT = 0x1A; // Z-axis accelerometer output, upper word
   private static final int TEMP_OUT = 0x1C; // Temperature output (internal, not calibrated)
   private static final int TIME_STAMP = 0x1E; // PPS mode time stamp
-  private static final int X_DELTANG_LOW = 0x24; // X-axis delta angle output, lower word
-  private static final int X_DELTANG_OUT = 0x26; // X-axis delta angle output, upper word
-  private static final int Y_DELTANG_LOW = 0x28; // Y-axis delta angle output, lower word
-  private static final int Y_DELTANG_OUT = 0x2A; // Y-axis delta angle output, upper word
-  private static final int Z_DELTANG_LOW = 0x2C; // Z-axis delta angle output, lower word
-  private static final int Z_DELTANG_OUT = 0x2E; // Z-axis delta angle output, upper word
-  private static final int X_DELTVEL_LOW = 0x30; // X-axis delta velocity output, lower word
-  private static final int X_DELTVEL_OUT = 0x32; // X-axis delta velocity output, upper word
-  private static final int Y_DELTVEL_LOW = 0x34; // Y-axis delta velocity output, lower word
-  private static final int Y_DELTVEL_OUT = 0x36; // Y-axis delta velocity output, upper word
-  private static final int Z_DELTVEL_LOW = 0x38; // Z-axis delta velocity output, lower word
-  private static final int Z_DELTVEL_OUT = 0x3A; // Z-axis delta velocity output, upper word
+  private static final int X_DELTA_ANGLE_LOW = 0x24; // X-axis delta angle output, lower word
+  private static final int X_DELTA_ANGLE_OUT = 0x26; // X-axis delta angle output, upper word
+  private static final int Y_DELTA_ANGLE_LOW = 0x28; // Y-axis delta angle output, lower word
+  private static final int Y_DELTA_ANGLE_OUT = 0x2A; // Y-axis delta angle output, upper word
+  private static final int Z_DELTA_ANGLE_LOW = 0x2C; // Z-axis delta angle output, lower word
+  private static final int Z_DELTA_ANGLE_OUT = 0x2E; // Z-axis delta angle output, upper word
+  private static final int X_DELTA_VELOCITY_LOW = 0x30; // X-axis delta velocity output, lower word
+  private static final int X_DELTA_VELOCITY_OUT = 0x32; // X-axis delta velocity output, upper word
+  private static final int Y_DELTA_VELOCITY_LOW = 0x34; // Y-axis delta velocity output, lower word
+  private static final int Y_DELTA_VELOCITY_OUT = 0x36; // Y-axis delta velocity output, upper word
+  private static final int Z_DELTA_VELOCITY_LOW = 0x38; // Z-axis delta velocity output, lower word
+  private static final int Z_DELTA_VELOCITY_OUT = 0x3A; // Z-axis delta velocity output, upper word
   private static final int XG_BIAS_LOW =
       0x40; // X-axis gyroscope bias offset correction, lower word
   private static final int XG_BIAS_HIGH =
@@ -80,11 +80,11 @@ public class ADIS16470 implements AutoCloseable, NTSendable {
       0x54; // Z-axis accelerometer bias offset correction, lower word
   private static final int ZA_BIAS_HIGH =
       0x56; // Z-axis accelerometer bias offset correction, upper word
-  private static final int FILT_CTRL = 0x5C; // Filter control
+  private static final int FILTER_CTRL = 0x5C; // Filter control
   private static final int MSC_CTRL = 0x60; // Miscellaneous control
   private static final int UP_SCALE = 0x62; // Clock scale factor, PPS mode
   private static final int DEC_RATE = 0x64; // Decimation rate control (output data rate)
-  private static final int NULL_CNFG = 0x66; // Auto-null configuration control
+  private static final int NULL_CONFIG = 0x66; // Auto-null configuration control
   private static final int GLOB_CMD = 0x68; // Global commands
   private static final int FIRM_REV = 0x6C; // Firmware revision
   private static final int FIRM_DM = 0x6E; // Firmware revision date, month and day
@@ -94,13 +94,13 @@ public class ADIS16470 implements AutoCloseable, NTSendable {
   private static final int USER_SCR1 = 0x76; // User scratch register 1
   private static final int USER_SCR2 = 0x78; // User scratch register 2
   private static final int USER_SCR3 = 0x7A; // User scratch register 3
-  private static final int FLSHCNT_LOW = 0x7C; // Flash update count, lower word
-  private static final int FLSHCNT_HIGH = 0x7E; // Flash update count, upper word
+  private static final int FLASH_COUNT_LOW = 0x7C; // Flash update count, lower word
+  private static final int FLASH_COUNT_HIGH = 0x7E; // Flash update count, upper word
 
-  private static final byte[] m_autospi_x_packet = {
-    X_DELTANG_OUT,
+  private static final byte[] m_autoSPI_x_packet = {
+    X_DELTA_ANGLE_OUT,
     FLASH_CNT,
-    X_DELTANG_LOW,
+    X_DELTA_ANGLE_LOW,
     FLASH_CNT,
     X_GYRO_OUT,
     FLASH_CNT,
@@ -116,10 +116,10 @@ public class ADIS16470 implements AutoCloseable, NTSendable {
     FLASH_CNT
   };
 
-  private static final byte[] m_autospi_y_packet = {
-    Y_DELTANG_OUT,
+  private static final byte[] m_autoSPI_y_packet = {
+    Y_DELTA_ANGLE_OUT,
     FLASH_CNT,
-    Y_DELTANG_LOW,
+    Y_DELTA_ANGLE_LOW,
     FLASH_CNT,
     X_GYRO_OUT,
     FLASH_CNT,
@@ -135,10 +135,10 @@ public class ADIS16470 implements AutoCloseable, NTSendable {
     FLASH_CNT
   };
 
-  private static final byte[] m_autospi_z_packet = {
-    Z_DELTANG_OUT,
+  private static final byte[] m_autoSPI_z_packet = {
+    Z_DELTA_ANGLE_OUT,
     FLASH_CNT,
-    Z_DELTANG_LOW,
+    Z_DELTA_ANGLE_LOW,
     FLASH_CNT,
     X_GYRO_OUT,
     FLASH_CNT,
@@ -186,7 +186,7 @@ public class ADIS16470 implements AutoCloseable, NTSendable {
   private static final double delta_angle_sf = 2160.0 / 2147483648.0; /* 2160 / (2^31) */
   private static final double rad_to_deg = 57.2957795;
   private static final double deg_to_rad = 0.0174532;
-  private static final double grav = 9.81;
+  private static final double gravity = 9.81;
 
   // User-specified yaw axis
   private IMUAxis m_yaw_axis;
@@ -201,7 +201,7 @@ public class ADIS16470 implements AutoCloseable, NTSendable {
   //private double m_accel_z = 0.0; EJM
 
   // Integrated gyro angle
-  private double m_integ_angle = 0.0;
+  private double m_integral_angle = 0.0;
 
   // Complementary filter variables
   private double m_dt = 0.0;
@@ -305,9 +305,9 @@ public class ADIS16470 implements AutoCloseable, NTSendable {
        * Configure IMU internal Bartlett filter
        */
     //   writeRegister(MSC_CTRL, 1);
-    //   writeRegister(NULL_CNFG, (m_calibration_time | 0x0700));
+    //   writeRegister(NULL_CONFIG, (m_calibration_time | 0x0700));
     //   writeRegister(DEC_RATE, 4);
-    //   writeRegister(FILT_CTRL, 0);
+    //   writeRegister(FILTER_CTRL, 0);
 
 
 
@@ -316,22 +316,22 @@ public class ADIS16470 implements AutoCloseable, NTSendable {
        * recalibrate the gyroscopes and the accelerometers
        */
     //   writeRegister(MSC_CTRL, 0xC1);
-    //   writeRegister(NULL_CNFG, ( m_calibration_time | 0x3F00 ) );
+    //   writeRegister(NULL_CONFIG, ( m_calibration_time | 0x3F00 ) );
     //   writeRegister(DEC_RATE, 4);   // 400 Hz (2.5ms) update rate
-    //   writeRegister(FILT_CTRL, 0);  // https://ez.analog.com/mems/w/documents/4080/bartlett-window-filter-response-in-mems-imus
+    //   writeRegister(FILTER_CTRL, 0);  // https://ez.analog.com/mems/w/documents/4080/bartlett-window-filter-response-in-mems-imus
 
       // Factory restore
       writeRegister(GLOB_CMD, 0x0002);
       try {Thread.sleep(1000);} catch (InterruptedException e) {}
     //   DriverStation.reportError( "ADIS16470 MSC_CTRL register: " + readRegister(MSC_CTRL), false);
-    //   DriverStation.reportError( "ADIS16470 NULL_CNFG register: " + readRegister(NULL_CNFG), false);
+    //   DriverStation.reportError( "ADIS16470 NULL_CONFIG register: " + readRegister(NULL_CONFIG), false);
     //   DriverStation.reportError( "ADIS16470 DEC_RATE register: " + readRegister(DEC_RATE), false);
-    //   DriverStation.reportError( "ADIS16470 FILT_CTRL register: " + readRegister(FILT_CTRL), false);
+    //   DriverStation.reportError( "ADIS16470 FILTER_CTRL register: " + readRegister(FILTER_CTRL), false);
 
-      // Run selftest and report results (DIAG_STAT bit 5)
+      // Run self test and report results (DIAG_STAT bit 5)
       writeRegister(GLOB_CMD, 0x0004);
       try {Thread.sleep(1000);} catch (InterruptedException e) {}
-    //   DriverStation.reportError( "ADIS16470 Selftest DIAG_STAT register: " + readRegister(DIAG_STAT), false);
+    //   DriverStation.reportError( "ADIS16470 Self test DIAG_STAT register: " + readRegister(DIAG_STAT), false);
 
       // Notify DS that IMU calibration delay is active
       DriverStation.reportWarning("ADIS16470 starting initial calibration delay.", false);
@@ -348,7 +348,7 @@ public class ADIS16470 implements AutoCloseable, NTSendable {
         return;
       }
 
-      // Let the user know the IMU was initiallized successfully
+      // Let the user know the IMU was initialized successfully
       DriverStation.reportWarning("ADIS16470 IMU Successfully Initialized!", false);
 
       // Drive "Ready" LED low
@@ -372,7 +372,7 @@ public class ADIS16470 implements AutoCloseable, NTSendable {
    * @return
    */
   private static long toULong(int sint) {
-    return sint & 0x00000000FFFFFFFFL;
+    return sint & 0x00000000FFFFFFFL;
   }
 
   /**
@@ -485,18 +485,18 @@ public class ADIS16470 implements AutoCloseable, NTSendable {
     // Do we need to change auto SPI settings?
     switch (m_yaw_axis) {
       case kX:
-        m_spi.setAutoTransmitData(m_autospi_x_packet, 2);
+        m_spi.setAutoTransmitData(m_autoSPI_x_packet, 2);
         break;
       case kY:
-        m_spi.setAutoTransmitData(m_autospi_y_packet, 2);
+        m_spi.setAutoTransmitData(m_autoSPI_y_packet, 2);
         break;
       default:
-        m_spi.setAutoTransmitData(m_autospi_z_packet, 2);
+        m_spi.setAutoTransmitData(m_autoSPI_z_packet, 2);
         break;
     }
     // Configure auto stall time
     m_spi.configureAutoStall(5, 1000, 1);
-    // Kick off auto SPI (Note: Device configration impossible after auto SPI is
+    // Kick off auto SPI (Note: Device configuration impossible after auto SPI is
     // activated)
     // DR High = Data good (data capture should be triggered on the rising edge)
     m_spi.startAutoTrigger(m_auto_interrupt, true, false);
@@ -537,7 +537,7 @@ public class ADIS16470 implements AutoCloseable, NTSendable {
       return 2;
     }
     m_calibration_time = new_cal_time.value;
-    writeRegister(NULL_CNFG, (m_calibration_time | 0x700));
+    writeRegister(NULL_CONFIG, (m_calibration_time | 0x700));
     if (!switchToAutoSPI()) {
       DriverStation.reportError("Failed to configure/reconfigure auto SPI.", false);
       return 2;
@@ -552,7 +552,7 @@ public class ADIS16470 implements AutoCloseable, NTSendable {
       return 2;
     }
     if (m_reg > 1999) {
-      DriverStation.reportError("Attemted to write an invalid deimation value.", false);
+      DriverStation.reportError("Attempted to write an invalid decimation value.", false);
       m_reg = 1999;
     }
     m_scaled_sample_rate = (((m_reg + 1.0) / 2000.0) * 1000000.0);
@@ -638,7 +638,7 @@ public class ADIS16470 implements AutoCloseable, NTSendable {
   /** {@inheritDoc} */
   public void reset() {
     synchronized (this) {
-      m_integ_angle = 0.0;
+      m_integral_angle = 0.0;
     }
   }
 
@@ -775,10 +775,10 @@ public class ADIS16470 implements AutoCloseable, NTSendable {
           gyro_rate_x_si = gyro_rate_x * deg_to_rad;
           gyro_rate_y_si = gyro_rate_y * deg_to_rad;
           gyro_rate_z_si = gyro_rate_z * deg_to_rad;
-          accel_x_si = accel_x * grav;
-          accel_y_si = accel_y * grav;
+          accel_x_si = accel_x * gravity;
+          accel_y_si = accel_y * gravity;
           accel_z_si = 0.0;  
-          //accel_z_si = accel_z * grav; EJM
+          //accel_z_si = accel_z * gravity; EJM
 
           // Store timestamp for next iteration
           previous_timestamp = buffer[i];
@@ -816,9 +816,9 @@ public class ADIS16470 implements AutoCloseable, NTSendable {
                * Don't accumulate first run. previous_timestamp will be "very" old and the
                * integration will end up way off
                */
-              m_integ_angle = 0.0;
+              m_integral_angle = 0.0;
             } else {
-              m_integ_angle += delta_angle;
+              m_integral_angle += delta_angle;
             }
             m_gyro_rate_x = gyro_rate_x;
             m_gyro_rate_y = gyro_rate_y;
@@ -939,7 +939,7 @@ public class ADIS16470 implements AutoCloseable, NTSendable {
         }
         break;
     }
-    return m_integ_angle;
+    return m_integral_angle;
   }
 
   /** @return Yaw axis angular rate in degrees per second (CCW positive) */
