@@ -27,9 +27,9 @@ import frc.robot.commands.CalibrateTurnFF;
  *
  * <p>This project is focused on testing the new mechanical design features used during the robot design and build as well
  * as getting experience with the swerve software. Most notably, the swerve drive control will be leveraging the provided
- * WPILib swerve functionality and exteded with thePath Planner software for path following. Another big part to the
+ * WPILib swerve functionality and extended with thePath Planner software for path following. Another big part to the
  * software is the extensive use of the WPILib data logger. This is used to log telemetry and other useful data for analysis
- * (failure prediction and understaning, system tuning, and etc). Be sure to always use a USB thumb drive while logging. To
+ * (failure prediction and understanding, system tuning, and etc). Be sure to always use a USB thumb drive while logging. To
  * do this, be sure to format the thumb drive with a RoboRIO compatible FS (like FAT32) and simply plug into one of the two
  * USB ports on the RoboRIO.
  *
@@ -37,7 +37,7 @@ import frc.robot.commands.CalibrateTurnFF;
  *
  * <p>This project uses the WPILib {@link edu.wpi.first.wpilibj2.command.CommandScheduler}. The
  * {@link edu.wpi.first.wpilibj2.command.CommandScheduler#run()} method of the scheduler is called every iteration of the
- * perdiodic loop.
+ * periodic loop.
  *
  * <p>The REV Robotics pressure sensor can be used for closed-loop control per the 2022 FRC game rules.
  *
@@ -83,7 +83,7 @@ public class Robot extends TimedRobot {
      * this should be the default of WPILib. Disable the command scheduler to keep the subsystems from logging data after
      * initial boot-up. Exception will be handled on a case-by-case basis (like IMU).
      *
-     * <p>2. Instantiate the robot containter (this will create all of subsystems and commands) and other objects.
+     * <p>2. Instantiate the robot container (this will create all of subsystems and commands) and other objects.
      *
      * <p>3. Disable the compressor to keep it from turning on during autonomous. The path-following is tuned with the
      * compressor off, so keep it off during auto to maintain accuracy.
@@ -91,7 +91,7 @@ public class Robot extends TimedRobot {
      * <p>4. If the logger is being used, start the log manager and setup all of the log entries. Each of the subsystems
      * will have their individual control and setup.
      * 
-     * <p>5. Run the period methods of all subsystems. This will create all of the loggin objects used throughout the robot
+     * <p>5. Run the period methods of all subsystems. This will create all of the logging objects used throughout the robot
      * life-cycle.
      * 
      * <p>6. Finally, update the swerve module home offsets to account for any errors during robot setup (cannot assume 0).
@@ -162,7 +162,7 @@ public class Robot extends TimedRobot {
      * This method is called only a single time at the start of autonomous. This is where the autonomous-specific
      * initialization code should go.
      *
-     * <p>1. Enable the command scheduler. This will begin logging all of the subsytem telemetry, running the subsystem
+     * <p>1. Enable the command scheduler. This will begin logging all of the subsystem telemetry, running the subsystem
      * state machines, and processing commands.
      * 
      * <p>2. Get the autonomous command to run.

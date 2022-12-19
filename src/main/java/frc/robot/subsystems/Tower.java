@@ -25,9 +25,9 @@ public class Tower extends SubsystemBase {
      *
      * <p><b>Idle</b> - there are no commands currently using the subsystem.
      *
-     * <p><b>LoadCargo</b> - the tower pushing cargo into the shoooter.
+     * <p><b>LoadCargo</b> - the tower pushing cargo into the shooter.
      *
-     * <p><b>UnloadCargo</b> - the tower pulling cargo out of the shoooter.
+     * <p><b>UnloadCargo</b> - the tower pulling cargo out of the shooter.
      */
     public enum StateType {
         Idle { 

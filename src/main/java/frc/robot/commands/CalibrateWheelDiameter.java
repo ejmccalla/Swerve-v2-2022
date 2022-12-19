@@ -33,7 +33,7 @@ public class CalibrateWheelDiameter extends CommandBase {
     }
 
     /**
-     * Set the swerve modules motor ouptuts to 0 volts. The drive encoder positions are output to the smart dashboard for 
+     * Set the swerve modules motor outputs to 0 volts. The drive encoder positions are output to the smart dashboard for 
      * recording.
      */
     @Override

@@ -106,7 +106,7 @@ public class Drivetrain extends SubsystemBase {
 
     /**
      * Set offset of the modules azimuth angle by using the input absolute "home" angle and the current angle read from the
-     * duty cycle endcoder.
+     * duty cycle encoder.
      */
     public void setHomeOffsets() {
         for (int i = 0; i < Constants.Drivetrain.numModules; i++) {
@@ -161,7 +161,7 @@ public class Drivetrain extends SubsystemBase {
     }
 
     /**
-     * Set the drive encoder postion to 0 for all modules.
+     * Set the drive encoder position to 0 for all modules.
      */
     public void resetModulesDriveEncoder() {
         for (int i = 0; i < Constants.Drivetrain.numModules; i++) {
@@ -185,7 +185,7 @@ public class Drivetrain extends SubsystemBase {
 
 
     /**
-     * Get the drive encoder postion for all modules in their native units of rotations.
+     * Get the drive encoder position for all modules in their native units of rotations.
      *
      * @return the rotations of the swerve drive encoders
      */
@@ -239,7 +239,7 @@ public class Drivetrain extends SubsystemBase {
     /**
      * Get the die temp of the IMU.
      *
-     * @return the IMU die temp in degrees celcius
+     * @return the IMU die temp in degrees celsius
      */
     public double getImuTempDegC() {
         return m_imu.getTemp();

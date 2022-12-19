@@ -23,8 +23,8 @@ import frc.robot.Constants;
 /**
  * Implements the turning and driving controllers of a swerve module.
  *
- * <p>The turning contoller is a combination of feedback and feedforward control. The feedback control is achieved using a
- * profiled PID controller (trapezoidal profile and constraints) using the absolute encoder to seed the reletive encoder for
+ * <p>The turning controller is a combination of feedback and feedforward control. The feedback control is achieved using a
+ * profiled PID controller (trapezoidal profile and constraints) using the absolute encoder to seed the relative encoder for
  * feedback. The feedforward control is achieved by using a simple permanent-magnet DC motor model which zeros the
  * acceleration coefficient (due to the trapezoid profile implementation).
  *
@@ -66,7 +66,7 @@ public class SwerveModule {
     private DoubleLogEntry m_turnVelErrorLogEntry;
     private DoubleLogEntry m_turnFeedforwardOutLogEntry;
     private DoubleLogEntry m_turnPidOutLogEntry;
-    private DoubleLogEntry m_turnApplidedVoltageLogEntry;
+    private DoubleLogEntry m_turnAppliedVoltageLogEntry;
 
 
     //--------------------------------------------------------------------------------------------------------------------//
@@ -90,7 +90,7 @@ public class SwerveModule {
             m_turnVelErrorLogEntry.append(getTurnVelErrorRps());
             m_turnFeedforwardOutLogEntry.append(getTurnFeedforwardOutputV());
             m_turnPidOutLogEntry.append(getTurnPidOutputV());
-            m_turnApplidedVoltageLogEntry.append(getTurnAppliedVoltage());
+            m_turnAppliedVoltageLogEntry.append(getTurnAppliedVoltage());
         }
     }
 
@@ -122,9 +122,9 @@ public class SwerveModule {
 
     /**
      * Set offset of the modules azimuth angle by using the input absolute "home" angle and the current angle read from the
-     * duty cycle endcoder.
+     * duty cycle encoder.
      *
-     * @param homeRad the "home" angle of the duty cycle endoder in radians
+     * @param homeRad the "home" angle of the duty cycle encoder in radians
      */
     public void setHomeOffset(double homeRad) {
         m_homeOffset = getTurnAbsEncAngleRad() - homeRad;
@@ -176,7 +176,7 @@ public class SwerveModule {
     }
 
     /**
-     * Set the drive encoder postion to 0.
+     * Set the drive encoder position to 0.
      */
     public void resetDriveEncoder() {
         m_driveEnc.setPosition(0);
@@ -269,7 +269,7 @@ public class SwerveModule {
     /**
      * Get the current turning controller position setpoint.
      *
-     * @return the postion setpoint in radians
+     * @return the position setpoint in radians
      */
     private double getTurnPosSetpointRad() {
         return m_turnController.getSetpoint().position;
@@ -411,7 +411,7 @@ public class SwerveModule {
             m_turnVelErrorLogEntry = new DoubleLogEntry(m_log, m_label + " Turn Velocity Error (rad/s)");
             m_turnFeedforwardOutLogEntry = new DoubleLogEntry(m_log, m_label + " Turn Feed-forward Output (V)");
             m_turnPidOutLogEntry = new DoubleLogEntry(m_log, m_label + " Turn PID Output (V)");
-            m_turnApplidedVoltageLogEntry = new DoubleLogEntry(m_log, m_label + " Turn Applied Voltage (V)");
+            m_turnAppliedVoltageLogEntry = new DoubleLogEntry(m_log, m_label + " Turn Applied Voltage (V)");
         } else {
             m_log = null;
             m_turnAbsEncLogEntry = null;
@@ -425,7 +425,7 @@ public class SwerveModule {
             m_turnVelErrorLogEntry = null;
             m_turnFeedforwardOutLogEntry = null;
             m_turnPidOutLogEntry = null;
-            m_turnApplidedVoltageLogEntry = null;
+            m_turnAppliedVoltageLogEntry = null;
         }
     }
 }

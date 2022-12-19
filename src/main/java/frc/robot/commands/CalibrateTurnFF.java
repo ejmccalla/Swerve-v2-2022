@@ -15,9 +15,9 @@ public class CalibrateTurnFF extends CommandBase {
 
     private enum State {
         RampPositive,
-        RampNegitive,
+        RampNegative,
         StepPositive,
-        StepNegitive
+        StepNegative
     }
 
     private Drivetrain m_drivetrain;
@@ -32,7 +32,7 @@ public class CalibrateTurnFF extends CommandBase {
     private int m_onVoltageCounter;
 
     /**
-     * Constructor for the calibrate tunrning feed-forward command.
+     * Constructor for the calibrate tunning feed-forward command.
      *
      * @param drivetrain uses the drivetrain subsystem
      */
@@ -42,9 +42,9 @@ public class CalibrateTurnFF extends CommandBase {
     }
 
     /**
-     * Update the drivetrain state to indicate the subysystem is calibrating the modules.
+     * Update the drivetrain state to indicate the subsystem is calibrating the modules.
      * 
-     * <p>This command should be scheduled as non-interruptable.
+     * <p>This command should be scheduled as non-interruptible.
      */
     @Override
     public void initialize() {
@@ -66,12 +66,12 @@ public class CalibrateTurnFF extends CommandBase {
             case RampPositive:
                 m_voltage += m_rampRateVpl;
                 if (m_voltage >= m_maxRampVoltage) {
-                    m_state = State.RampNegitive;
+                    m_state = State.RampNegative;
                     m_voltage = 0.0;
                 }
                 break;
                 
-            case RampNegitive:
+            case RampNegative:
                 if (m_offVoltageCounter == 0) {
                     m_voltage -= m_rampRateVpl;
                     if (m_voltage <= -m_maxRampVoltage) {
@@ -88,7 +88,7 @@ public class CalibrateTurnFF extends CommandBase {
                 if (m_offVoltageCounter == 0) {
                     m_voltage = m_stepVoltage;
                     if (m_onVoltageCounter == 0) {
-                        m_state = State.StepNegitive;
+                        m_state = State.StepNegative;
                         m_onVoltageCounter = 100;
                     } else {
                         --m_onVoltageCounter;
@@ -98,7 +98,7 @@ public class CalibrateTurnFF extends CommandBase {
                 }
                 break;
             
-            case StepNegitive:
+            case StepNegative:
                 if (m_offVoltageCounter == 0) {
                     m_voltage = -m_stepVoltage;
                     if (m_onVoltageCounter == 0) {
@@ -125,7 +125,7 @@ public class CalibrateTurnFF extends CommandBase {
     /**
      * The command is complete when all the stages are complete.
      * 
-     * <p>This command should be scheduled as non-interruptable.
+     * <p>This command should be scheduled as non-interruptible.
      */
     @Override
     public boolean isFinished() {
@@ -135,7 +135,7 @@ public class CalibrateTurnFF extends CommandBase {
     /**
      * Update the drivetrain state when all of the modules have completed the Calibration.
      * 
-     * <p>This command should be scheduled as non-interruptable.
+     * <p>This command should be scheduled as non-interruptible.
      */
     @Override
     public void end(boolean interrupted) {

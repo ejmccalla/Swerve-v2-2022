@@ -172,7 +172,7 @@ public final class Calibrations {
      *
      * <p>4. Stop recording.
      *
-     * <p>5. The accelerations are the delta velocity measurements. Only keep the accleration values starting with the
+     * <p>5. The accelerations are the delta velocity measurements. Only keep the acceleration values starting with the
      * initial max voltage and ending with the motor reaching cruise velocity. Take the average of these remaining data.
      * 
      * <p>6. Since the acceleration data are noisy and short, repeat steps 3-5 several times. The maximum angular
@@ -194,7 +194,7 @@ public final class Calibrations {
     /**
      * The P-gain of the PID turning controller.
      *
-     * <p>The same gain is appplied across all of the swerve modules and modes.
+     * <p>The same gain is applied across all of the swerve modules and modes.
      *
      * <p>This should be tuned before each event minimum
      */
@@ -204,7 +204,7 @@ public final class Calibrations {
     /**
      * The D-gain of the PID turning controller.
      *
-     * <p>The same gain is appplied across all of the swerve modules and modes.
+     * <p>The same gain is applied across all of the swerve modules and modes.
      *
      * <p>This should be tuned before each event minimum
      */
@@ -240,7 +240,7 @@ public final class Calibrations {
 
 
     /**
-     * The acceration gain of the feedforward turning controller.
+     * The acceleration gain of the feedforward turning controller.
      *
      * <p>Use the WPILib system identification tool to collect data and fit it to the permanent-magnet DC motor model.
      *
@@ -256,7 +256,7 @@ public final class Calibrations {
     /**
      * The P-gain of the PID driving controller.
      *
-     * <p>The same gain is appplied across all of the swerve modules and modes.
+     * <p>The same gain is applied across all of the swerve modules and modes.
      *
      * <p>This should be tuned before each event minimum
      */
@@ -266,7 +266,7 @@ public final class Calibrations {
     /**
      * The D-gain of the PID driving controller.
      *
-     * <p>The same gain is appplied across all of the swerve modules and modes.
+     * <p>The same gain is applied across all of the swerve modules and modes.
      *
      * <p>This should be tuned before each event minimum
      */
@@ -302,7 +302,7 @@ public final class Calibrations {
 
 
     /**
-     * The acceration gain of the feedforward driving controller.
+     * The acceleration gain of the feedforward driving controller.
      *
      * <p>Use the WPILib system identification tool to collect data and fit it to the permanent-magnet DC motor model.
      *
