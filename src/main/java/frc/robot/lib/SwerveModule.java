@@ -23,13 +23,13 @@ import frc.robot.Constants;
 /**
  * Implements the turning and driving controllers of a swerve module.
  *
- * <p>The turning controller is a combination of feedback and feedforward control. The feedback control is achieved using a
+ * <p>The turning controller is a combination of feedback and feed-forward control. The feedback control is achieved using a
  * profiled PID controller (trapezoidal profile and constraints) using the absolute encoder to seed the relative encoder for
- * feedback. The feedforward control is achieved by using a simple permanent-magnet DC motor model which zeros the
+ * feedback. The feed-forward control is achieved by using a simple permanent-magnet DC motor model which zeros the
  * acceleration coefficient (due to the trapezoid profile implementation).
  *
- * <p>The driving controller is also a combination of feedback and feedforward control. The feedback control is achieved
- * using a velocity controller and the REV NEO onboard relative encoder. The feedforward control is achieved by using a
+ * <p>The driving controller is also a combination of feedback and feed-forward control. The feedback control is achieved
+ * using a velocity controller and the REV NEO onboard relative encoder. The feed-forward control is achieved by using a
  * simple permanent-magnet DC motor model which zeros the acceleration coefficient (due to the trapezoid profile
  * implementation).
  */
@@ -375,13 +375,13 @@ public class SwerveModule {
 
         m_driveMotor.restoreFactoryDefaults();
         m_driveMotor.setSmartCurrentLimit(35);
-        m_driveMotor.enableVoltageCompensation(12.0);
+        //m_driveMotor.enableVoltageCompensation(10.0);
         m_driveMotor.setIdleMode(IdleMode.kBrake);
         //m_driveMotor.burnFlash();
 
         m_turnMotor.restoreFactoryDefaults();
         m_turnMotor.setSmartCurrentLimit(35);
-        m_turnMotor.enableVoltageCompensation(12.0);
+        //m_turnMotor.enableVoltageCompensation(10.0);
         m_turnMotor.setIdleMode(IdleMode.kBrake);
         //m_turnMotor.burnFlash();
 

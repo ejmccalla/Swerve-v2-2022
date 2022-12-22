@@ -16,7 +16,7 @@ import frc.robot.lib.ADIS16470;
 import frc.robot.lib.SwerveModule;
 
 /**
- * Implements the swerve drivetrain using REV/SparkMax, swerve MK4 modules, CTRE mag encoders, and an ADIS16470 IMU.
+ * Implements the swerve drivetrain using REV/SparkMax, swerve MK4 modules, SRX mag encoders, and an ADIS16470 IMU.
  *
  * @see <a href="https://www.analog.com/media/en/technical-documentation/data-sheets/ADIS16470.pdf">ADIS16470 IMU Datasheet</a>
  */

@@ -59,7 +59,7 @@ public class Drive extends CommandBase {
      * Compose the swerve drive signal.
      * 
      * <p>Each of the driver inputs (X and Y translational velocity and rotational velocity) are rate limited and have an
-     * applied deadband. These values should be set based on driver feedback.
+     * applied dead-band. These values should be set based on driver feedback.
      */
     @Override
     public void execute() {

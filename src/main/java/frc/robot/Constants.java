@@ -99,7 +99,7 @@ public final class Constants {
                               Units.inchesToMeters(Calibrations.TRACK_WIDTH_INCH) / 2)
         };
 
-        /** Using a CTRE Mag Encoder. */
+        /** Using a SRX Mag Encoder. */
         public static final double turnEncPpr = 1024.0;
         public static final int numModules = 4;
 

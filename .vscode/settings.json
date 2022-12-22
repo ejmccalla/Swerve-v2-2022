@@ -37,6 +37,13 @@
   "java.checkstyle.configuration": "${workspaceFolder}/styleguide-frc4607.xml",
   "java.checkstyle.version": "10.3",
   "cSpell.words": [
-    "RPSS"
+    "ADIS",
+    "Datasheet",
+    "Feedforward",
+    "Odometry",
+    "roborio",
+    "RPSS",
+    "Setpoint",
+    "teleop"
   ],
 }
