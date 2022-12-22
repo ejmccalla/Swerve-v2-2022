@@ -326,7 +326,7 @@ public class SwerveModule {
      * @return the derived voltage
      */
     private double getTurnAppliedVoltage() {
-        return m_turnMotor.get() * m_turnMotor.getBusVoltage();
+        return m_turnMotor.getAppliedOutput() * m_turnMotor.getBusVoltage();
     }
     
 

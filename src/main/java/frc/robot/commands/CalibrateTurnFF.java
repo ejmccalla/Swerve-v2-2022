@@ -1,6 +1,7 @@
 package frc.robot.commands;
 
 import edu.wpi.first.wpilibj2.command.CommandBase;
+import edu.wpi.first.wpilibj.DriverStation;
 import frc.robot.subsystems.Drivetrain;
 import frc.robot.subsystems.Drivetrain.StateType;
 
@@ -55,6 +56,7 @@ public class CalibrateTurnFF extends CommandBase {
         m_offVoltageCounter = 50;
         m_onVoltageCounter = 50;
         m_state = State.RampPositive;
+        DriverStation.reportWarning("Starting the turning motors feed-forward calibration", false);
     }
 
     /**
@@ -142,6 +144,7 @@ public class CalibrateTurnFF extends CommandBase {
         m_drivetrain.setModulesIdleMode(false);
         m_drivetrain.setIdleModules();
         m_drivetrain.updateState(StateType.Idle);
+        DriverStation.reportWarning("Stopping the turning motors feed-forward calibration", false);
     }
 
 }
