@@ -48,6 +48,7 @@ public class Robot extends TimedRobot {
 
     private static final double LOOP_TIME_TO_HOURS = 0.02 / 3600.0;
     private static final boolean m_enableLogger = true;
+    private CalibrateTurnFF m_calibrateTurnFF;
     private CommandScheduler m_commandScheduler;
     private PowerDistribution m_pdh;
     private RobotContainer m_robotContainer;
@@ -105,6 +106,7 @@ public class Robot extends TimedRobot {
         m_robotContainer = new RobotContainer();
         m_compressor = new Compressor(Constants.Hardware.REV_PH_ID, PneumaticsModuleType.REVPH);
         m_pdh = new PowerDistribution(Hardware.REV_PDH_ID, PowerDistribution.ModuleType.kRev);
+        m_calibrateTurnFF = new CalibrateTurnFF(m_robotContainer.m_drivetrain);
 
         m_compressor.disable();
         m_autoCommand = null;
@@ -317,13 +319,15 @@ public class Robot extends TimedRobot {
         m_commandScheduler.cancelAll();
         m_commandScheduler.enable();
         // m_commandScheduler.schedule(false, new CalibrateWheelDiameter(m_robotContainer.m_drivetrain));
-        m_commandScheduler.schedule(false, new CalibrateTurnFF(m_robotContainer.m_drivetrain));
+        m_commandScheduler.schedule(false, m_calibrateTurnFF);
     }
 
 
     @Override
     public void testPeriodic() {
-        m_commandScheduler.run();
+        if (!m_commandScheduler.isScheduled(m_calibrateTurnFF)) {
+            m_commandScheduler.disable();
+        }
     }
 
 

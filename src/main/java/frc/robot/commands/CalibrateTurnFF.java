@@ -53,8 +53,8 @@ public class CalibrateTurnFF extends CommandBase {
         m_drivetrain.setIdleModules();
         m_isFinished = false;
         m_voltage = 0.0;
-        m_offVoltageCounter = 50;
-        m_onVoltageCounter = 50;
+        m_offVoltageCounter = 150;
+        m_onVoltageCounter = 150;
         m_state = State.RampPositive;
         DriverStation.reportWarning("Starting the turning motors feed-forward calibration", false);
     }
@@ -66,10 +66,15 @@ public class CalibrateTurnFF extends CommandBase {
     public void execute() {
         switch (m_state) {
             case RampPositive:
-                m_voltage += m_rampRateVpl;
-                if (m_voltage >= m_maxRampVoltage) {
-                    m_state = State.RampNegative;
-                    m_voltage = 0.0;
+                if (m_offVoltageCounter == 0) {    
+                    m_voltage += m_rampRateVpl;
+                    if (m_voltage >= m_maxRampVoltage) {
+                        m_state = State.RampNegative;
+                        m_voltage = 0.0;
+                        m_offVoltageCounter = 150;
+                    }
+                } else {
+                    --m_offVoltageCounter;
                 }
                 break;
                 
@@ -79,7 +84,7 @@ public class CalibrateTurnFF extends CommandBase {
                     if (m_voltage <= -m_maxRampVoltage) {
                         m_state = State.StepPositive;
                         m_voltage = 0.0;
-                        m_offVoltageCounter = 50;
+                        m_offVoltageCounter = 150;
                     }
                 } else {
                     --m_offVoltageCounter;
@@ -91,7 +96,7 @@ public class CalibrateTurnFF extends CommandBase {
                     m_voltage = m_stepVoltage;
                     if (m_onVoltageCounter == 0) {
                         m_state = State.StepNegative;
-                        m_onVoltageCounter = 100;
+                        m_onVoltageCounter = 150;
                     } else {
                         --m_onVoltageCounter;
                     }
@@ -126,8 +131,6 @@ public class CalibrateTurnFF extends CommandBase {
 
     /**
      * The command is complete when all the stages are complete.
-     * 
-     * <p>This command should be scheduled as non-interruptible.
      */
     @Override
     public boolean isFinished() {
@@ -136,8 +139,6 @@ public class CalibrateTurnFF extends CommandBase {
 
     /**
      * Update the drivetrain state when all of the modules have completed the Calibration.
-     * 
-     * <p>This command should be scheduled as non-interruptible.
      */
     @Override
     public void end(boolean interrupted) {
